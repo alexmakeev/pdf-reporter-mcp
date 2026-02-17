@@ -77,7 +77,10 @@ describe('pipeline', () => {
         expect.objectContaining({
           content: '<p>Pre-rendered HTML</p>',
           meta: expect.objectContaining({ title: 'Test Report' }),
-          theme: expect.objectContaining({ primaryColor: expect.any(String) }),
+          theme: expect.objectContaining({
+            primaryColor: expect.stringMatching(/^#[0-9A-Fa-f]{6}$/),
+            coverColor: expect.stringMatching(/^#[0-9A-Fa-f]{6}$/),
+          }),
         }),
         'generic',
       );
@@ -96,7 +99,13 @@ describe('pipeline', () => {
 
       await generatePdfFromHtml(input);
 
-      expect(compileTemplate).toHaveBeenCalledWith(expect.any(Object), 'business-report');
+      expect(compileTemplate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: '<p>Content</p>',
+          meta: expect.objectContaining({ title: 'Custom Template Test' }),
+        }),
+        'business-report',
+      );
     });
 
     it('should apply TOC option', async () => {
@@ -163,10 +172,14 @@ describe('pipeline', () => {
 
       await generatePdfFromHtml(input);
 
-      expect(generatePdf).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ filename: 'my-report-2024-final' }),
-      );
+      const call = vi.mocked(generatePdf).mock.calls[0];
+      expect(call).toBeDefined();
+      const pdfOptions = call![1];
+      expect(pdfOptions.filename).toBe('my-report-2024-final');
+      expect(pdfOptions.filename).not.toContain('!');
+      expect(pdfOptions.filename).not.toContain('#');
+      expect(pdfOptions.filename).not.toContain('(');
+      expect(pdfOptions.filename).not.toContain(')');
     });
 
     it('should propagate PdfReporterError from template engine', async () => {
@@ -308,8 +321,13 @@ describe('pipeline', () => {
       });
 
       expect(result.html).toContain('<div class="diagram-container">');
+      expect(result.html).toContain('<div class="diagram-svg">');
       expect(result.html).toContain('<svg>diagram</svg>');
       expect(result.html).not.toContain('{{diagram:flow}}');
+      // Verify the exact SVG is embedded (not some other SVG)
+      expect(result.html).toContain('<svg>diagram</svg>');
+      // Verify renderMarkdown was called with the original markdown text
+      expect(renderMarkdown).toHaveBeenCalledWith('Before {{diagram:flow}} After');
     });
 
     it('should handle missing diagrams array gracefully', async () => {

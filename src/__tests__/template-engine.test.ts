@@ -97,6 +97,26 @@ describe('template-engine', () => {
       expect(result).toContain('<html>');
       expect(result).toContain('<body>');
       expect(result).toContain('</html>');
+      // Two-pass compilation: report template produces body, base template wraps it
+      // The content from the report template should be inside the base body section
+      expect(result).toContain('<p>Test content</p>');
+      expect(result).toContain('Test Report');
+    });
+
+    it('should use cache and call readFile only once for the same template', async () => {
+      // Clear cache by using a unique template name
+      const templateName = 'generic-cache-test';
+
+      // First call — loads files and populates cache
+      await compileTemplate(baseContext, templateName);
+      const readFileCallCountAfterFirst = vi.mocked(readFile).mock.calls.length;
+
+      // Second call — should use cache, readFile should not be called again for this template
+      await compileTemplate(baseContext, templateName);
+      const readFileCallCountAfterSecond = vi.mocked(readFile).mock.calls.length;
+
+      // No additional readFile calls for the template on the second invocation
+      expect(readFileCallCountAfterSecond).toBe(readFileCallCountAfterFirst);
     });
 
     it('should render report template with context', async () => {
@@ -140,16 +160,20 @@ describe('template-engine', () => {
     it('should use formatDate helper', async () => {
       const result = await compileTemplate(baseContext, 'generic-test-3');
 
-      // Should format the date
+      // Should format the date as "Month Day, Year" (en-US locale)
       expect(result).toContain('February');
       expect(result).toContain('16');
       expect(result).toContain('2026');
+      // Verify the date string is a properly formatted en-US date (not just the raw ISO string)
+      expect(result).not.toContain('2026-02-16');
     });
 
     it('should use eq helper for conditionals', async () => {
       const customTemplate = `
 {{#if (eq options.pageSize "A4")}}
 <p>This is A4</p>
+{{else}}
+<p>Not A4</p>
 {{/if}}
 {{{content}}}
 `;
@@ -168,9 +192,33 @@ describe('template-engine', () => {
         throw new Error(`File not found: ${pathStr}`);
       }) as typeof readFile);
 
-      const result = await compileTemplate(baseContext, 'custom');
+      // Test with equal value (A4 === A4 → true branch)
+      const resultA4 = await compileTemplate(baseContext, 'custom');
+      expect(resultA4).toContain('This is A4');
+      expect(resultA4).not.toContain('Not A4');
 
-      expect(result).toContain('This is A4');
+      // Test with unequal value (Letter !== A4 → false branch)
+      const letterContext = {
+        ...baseContext,
+        options: { ...baseContext.options, pageSize: 'Letter' as const },
+      };
+      // Use a different template name to bypass cache
+      vi.mocked(readFile).mockImplementation((async (path: unknown) => {
+        const pathStr = String(path);
+        if (pathStr.includes('base.hbs')) {
+          return mockBaseTemplate;
+        }
+        if (pathStr.includes('custom-letter.hbs')) {
+          return customTemplate;
+        }
+        if (pathStr.includes('report.css')) {
+          return mockCss;
+        }
+        throw new Error(`File not found: ${pathStr}`);
+      }) as typeof readFile);
+      const resultLetter = await compileTemplate(letterContext, 'custom-letter');
+      expect(resultLetter).toContain('Not A4');
+      expect(resultLetter).not.toContain('This is A4');
     });
 
     it('should load and register partials', async () => {
@@ -202,6 +250,13 @@ describe('template-engine', () => {
 
       expect(result).toContain('Hello from partial');
       expect(result).toContain('partial-content');
+      // Verify partials are loaded from the partials directory
+      expect(readdir).toHaveBeenCalledWith(expect.stringContaining('partials'));
+      // Verify the partial file was read
+      expect(readFile).toHaveBeenCalledWith(
+        expect.stringContaining('testPartial.hbs'),
+        'utf-8',
+      );
     });
 
     it('should handle missing subtitle gracefully', async () => {

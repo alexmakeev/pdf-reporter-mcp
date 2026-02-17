@@ -76,6 +76,12 @@ describe('mermaid-renderer', () => {
         expect.objectContaining({ timeout: 30000 }),
         expect.any(Function),
       );
+
+      // Verify readFile is called to read the .svg output file
+      expect(readFile).toHaveBeenCalledWith(
+        expect.stringContaining('.svg'),
+        'utf-8',
+      );
     });
 
     it('should successfully render multiple diagrams', async () => {
@@ -102,8 +108,17 @@ describe('mermaid-renderer', () => {
       const result = await renderDiagrams(diagrams, '/tmp/test');
 
       expect(Object.keys(result)).toHaveLength(2);
-      expect(result.diagram1.svg).toBe(mockSvg1);
-      expect(result.diagram2.svg).toBe(mockSvg2);
+      // Assert EACH diagram key exists with correct SVG content
+      expect(result).toHaveProperty('diagram1');
+      expect(result).toHaveProperty('diagram2');
+      expect(result.diagram1).toEqual({ type: 'rendered-diagram', svg: mockSvg1 });
+      expect(result.diagram2).toEqual({ type: 'rendered-diagram', svg: mockSvg2 });
+      expect(result.diagram1.svg).toBe('<svg>diagram 1</svg>');
+      expect(result.diagram2.svg).toBe('<svg>diagram 2</svg>');
+      // Each diagram should have been written to a .mmd file
+      expect(writeFile).toHaveBeenCalledTimes(2);
+      // Each diagram should have been rendered via mmdc
+      expect(execFile).toHaveBeenCalledTimes(2);
     });
 
     it('should return empty record for empty diagrams array', async () => {

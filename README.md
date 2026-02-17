@@ -1,3 +1,8 @@
+[![CI](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
+[![Tests](https://img.shields.io/badge/tests-77%20passed-brightgreen)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # PDF Reporter MCP
 
 Multi-purpose MCP server for generating SVG diagrams and PDF documents. Render Mermaid diagrams to SVG, compose Markdown content with callout blocks, and produce styled PDF reports — all through standard MCP tools.

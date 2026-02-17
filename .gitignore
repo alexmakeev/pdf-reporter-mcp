@@ -8,3 +8,4 @@ output/*.pdf
 .env
 coverage/
 .ckb/
+reports/

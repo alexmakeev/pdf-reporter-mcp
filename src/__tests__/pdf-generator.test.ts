@@ -83,10 +83,13 @@ describe('pdf-generator', () => {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
 
-      expect(mockPage.setContent).toHaveBeenCalledWith(html, {
-        waitUntil: 'networkidle0',
-        timeout: 30000,
-      });
+      expect(mockPage.setContent).toHaveBeenCalledWith(
+        '<html><body>Test</body></html>',
+        {
+          waitUntil: 'networkidle0',
+          timeout: 30000,
+        },
+      );
 
       expect(mockPage.pdf).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -110,6 +113,7 @@ describe('pdf-generator', () => {
       );
 
       expect(result.path).toContain('test-report');
+      expect(result.path).toContain('.pdf');
       expect(result.size).toBe('16 B'); // Buffer.from('mock pdf content').length = 16
       expect(result.pages).toBeGreaterThanOrEqual(1);
     });
@@ -229,7 +233,7 @@ describe('pdf-generator', () => {
 
       await generatePdf(html, options);
 
-      expect(mockBrowser.close).toHaveBeenCalled();
+      expect(mockBrowser.close).toHaveBeenCalledTimes(1);
     });
 
     it('should close browser on error and throw PdfReporterError', async () => {
@@ -291,6 +295,11 @@ describe('pdf-generator', () => {
       mockPage.pdf.mockResolvedValueOnce(Buffer.alloc(5120));
       result = await generatePdf(html, options);
       expect(result.size).toBe('5.0 KB');
+
+      // Test MB file size (2 * 1024 * 1024 = 2097152 bytes = 2.0 MB)
+      mockPage.pdf.mockResolvedValueOnce(Buffer.alloc(2 * 1024 * 1024));
+      result = await generatePdf(html, options);
+      expect(result.size).toBe('2.0 MB');
     });
   });
 });
