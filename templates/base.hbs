@@ -7,6 +7,15 @@
     :root {
       --theme-primary: {{theme.primaryColor}};
       --theme-cover: {{theme.coverColor}};
+      {{#if theme.palette.[0]}}
+      --theme-primary-pastel: {{theme.palette.[0]}};
+      {{/if}}
+      {{#if theme.palette.[6]}}
+      --theme-primary-light: {{theme.palette.[6]}};
+      {{/if}}
+      {{#each theme.palette}}
+      --palette-{{@index}}: {{this}};
+      {{/each}}
     }
   </style>
   <style>

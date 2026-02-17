@@ -5,10 +5,12 @@
     <img src="{{meta.logo}}" alt="Logo" />
   </div>
   {{/if}}
-  <h1 class="cover-title">{{meta.title}}</h1>
-  {{#if meta.subtitle}}
-  <p class="cover-subtitle">{{meta.subtitle}}</p>
-  {{/if}}
+  <div class="cover-title-area">
+    <h1 class="cover-title">{{meta.title}}</h1>
+    {{#if meta.subtitle}}
+    <p class="cover-subtitle">{{meta.subtitle}}</p>
+    {{/if}}
+  </div>
   {{#if meta.date}}
   <p class="cover-date">{{meta.date}}</p>
   {{/if}}

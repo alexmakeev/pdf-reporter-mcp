@@ -10,6 +10,7 @@ import { renderDiagrams } from './mermaid-renderer.js';
 import { renderMarkdown } from './markdown-renderer.js';
 import { compileTemplate } from './template-engine.js';
 import { generatePdf as generatePdfFile } from './pdf-generator.js';
+import { generatePalette } from './color-utils.js';
 import {
   PdfReporterError,
   DEFAULT_THEME,
@@ -34,7 +35,8 @@ import {
 function getThemeConfig(): ThemeConfig {
   const primaryColor = process.env['THEME_PRIMARY_COLOR'] ?? DEFAULT_THEME.primaryColor;
   const coverColor = process.env['THEME_COVER_COLOR'] ?? primaryColor;
-  return { primaryColor, coverColor };
+  const palette = generatePalette(primaryColor);
+  return { primaryColor, coverColor, palette };
 }
 
 // -----------------------------------------------------------------------------

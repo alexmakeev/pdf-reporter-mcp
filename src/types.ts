@@ -237,11 +237,14 @@ export interface ThemeConfig {
   primaryColor: string;
   /** Cover page background color (default: same as primaryColor) */
   coverColor: string;
+  /** Auto-generated harmonious palette for diagrams and charts */
+  palette: string[];
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
   primaryColor: '#4169E1',
   coverColor: '#4169E1',
+  palette: [], // will be computed at runtime
 };
 
 // -----------------------------------------------------------------------------

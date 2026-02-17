@@ -3,7 +3,23 @@
   --theme-primary: #4169E1;
   --theme-cover: #4169E1;
   --theme-primary-dark: #2c4db3;
+  --theme-primary-pastel: #E0E7F5;
+  --theme-primary-light: #EDF1F9;
 }
+
+/* === Palette Variables ===
+ * Palette colors are injected at runtime as CSS custom properties via base.hbs.
+ * Available as --palette-0 through --palette-7:
+ *   --palette-0: primary color (same as --theme-primary)
+ *   --palette-1: analogous +30 (warm shift)
+ *   --palette-2: triadic +120
+ *   --palette-3: triadic +240
+ *   --palette-4: analogous +60, lighter
+ *   --palette-5: complementary
+ *   --palette-6: same hue, lighter (for backgrounds)
+ *   --palette-7: same hue, darker (for borders/emphasis)
+ * Use these in diagrams, charts, and visual elements for consistent theming.
+ */
 
 /* === Base Reset & Typography === */
 * {
@@ -29,43 +45,44 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  height: 100vh;
+  padding: 60px 40px;
   page-break-after: always;
-  background: var(--theme-cover);
-  color: white;
-  padding: 60px;
-  margin: 0 -10px;
+  box-sizing: border-box;
+}
+
+.cover-title-area {
+  background: var(--theme-primary-pastel, #E0E7F5);
+  border-radius: 16px;
+  padding: 48px 56px;
   text-align: center;
-}
-
-.cover-logo {
-  margin-bottom: 40px;
-}
-
-.cover-logo img {
-  max-width: 190px;
-  height: auto;
-  opacity: 0.95;
+  max-width: 85%;
+  margin-bottom: 24px;
 }
 
 .cover-title {
-  font-size: 32pt;
-  font-weight: 700;
-  margin-bottom: 16px;
-  line-height: 1.2;
+  font-size: 34px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.25;
 }
 
 .cover-subtitle {
-  font-size: 14pt;
-  font-weight: 300;
-  opacity: 0.85;
-  margin-bottom: 48px;
+  font-size: 18px;
+  color: #3a3a3a;
+  margin: 16px 0 0 0;
+  font-weight: 400;
 }
 
 .cover-date {
-  margin-top: 60px;
-  opacity: 0.7;
-  font-size: 11pt;
+  font-size: 14px;
+  color: #6a6a6a;
+  margin-top: 40px;
+}
+
+.cover-logo img {
+  max-height: 72px;
+  margin-bottom: 24px;
 }
 
 /* === Table of Contents === */
@@ -293,8 +310,8 @@ table {
 }
 
 th {
-  background: var(--theme-primary);
-  color: white;
+  background: var(--theme-primary-pastel, #E0E7F5);
+  color: #1a1a1a;
   font-weight: 600;
   text-align: left;
   padding: 10px 12px;
@@ -316,34 +333,31 @@ tr:hover td {
 
 /* === Callout Blocks === */
 .callout {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  margin: 16px 0;
-  border-radius: 6px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 8px;
   page-break-inside: avoid;
   border-left: 4px solid;
 }
 
-.callout-icon {
-  font-size: 18pt;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.callout-content {
-  flex: 1;
-}
-
 .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
   font-size: 11pt;
   margin-bottom: 8px;
 }
 
+.callout-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
 .callout-body {
   font-size: 10pt;
-  line-height: 1.5;
+  line-height: 1.7;
 }
 
 /* Callout types (9 total) */

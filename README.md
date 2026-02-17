@@ -1,16 +1,15 @@
 # PDF Reporter MCP
 
-MCP server for generating professional PDF documents from Markdown content with callout syntax, Mermaid diagrams, and styled templates.
+Multi-purpose MCP server for generating SVG diagrams and PDF documents. Render Mermaid diagrams to SVG, compose Markdown content with callout blocks, and produce styled PDF reports — all through standard MCP tools.
 
 ## Features
 
+- **Mermaid to SVG** — Render Mermaid diagrams to clean SVG via dedicated MCP tool
 - **Markdown to PDF** — Convert Markdown content with custom callout blocks to styled PDF documents
-- **Mermaid Diagrams** — Inline Mermaid diagram rendering to SVG with placeholder replacement
-- **Callout Blocks** — 9 callout types with custom styling using `:::type Title` syntax
-- **Cover Pages** — Professional cover page with title, subtitle, and optional logo
-- **Table of Contents** — Auto-generated TOC with heading anchors
-- **PDF Options** — Configurable page size, margins, headers, and footers
-- **MCP Protocol** — Standard MCP server with stdio transport
+- **Callout Blocks** — 9 callout types (idea, automation, warning, success, info, critical, business, expert, tip) using `:::type Title` syntax
+- **Pastel Theme** — Professional styling with configurable pastel color palette
+- **Harmonious Diagrams** — Pastel fills with tonal text and borders for visual consistency
+- **MCP Protocol** — Standard MCP server with stdio and SSE transports
 
 ## Quick Start
 

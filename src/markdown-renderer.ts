@@ -62,12 +62,15 @@ async function renderCallout(match: CalloutMatch, marked: Marked): Promise<strin
     'font-size: 15px',
     `color: ${titleColor}`,
     'margin-bottom: 8px',
+    'display: flex',
+    'align-items: center',
+    'gap: 8px',
   ].join('; ');
 
   const bodyStyle = [
     `color: ${bodyColor}`,
     'font-size: 14px',
-    'line-height: 1.6',
+    'line-height: 1.7',
   ].join('; ');
 
   let html = `<div class="callout callout-${type}" style="${containerStyle}">`;

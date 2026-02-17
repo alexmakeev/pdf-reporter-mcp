@@ -125,7 +125,7 @@ const server = new McpServer({
 
 server.tool(
   'render_diagram',
-  'Render a Mermaid diagram to SVG',
+  'Render a Mermaid diagram to SVG. The document uses a pastel color theme. When composing Mermaid diagrams, use LIGHT/PASTEL background fills with BLACK text — never use dark fills with white text. The theme primary color is Royal Blue (#4169E1). Choose pastel shades of blue, green, amber, violet etc. for node fills. Example Mermaid styles: style A fill:#E0E7F5,color:#1a1a1a,stroke:#4169E1',
   RenderDiagramInputSchema.shape,
   async (input) => {
     try {
@@ -150,7 +150,7 @@ server.tool(
 
 server.tool(
   'render_content',
-  'Render Markdown content with callouts and diagram placeholders to HTML',
+  'Render Markdown content with callouts and diagram placeholders to HTML. Pass pre-rendered diagrams from render_diagram (which should use palette colors for visual harmony).',
   RenderContentInputSchema.shape,
   async (input) => {
     try {
