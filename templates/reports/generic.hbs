@@ -1,0 +1,24 @@
+<!-- Cover Page -->
+<div class="cover-page">
+  {{#if meta.logo}}
+  <div class="cover-logo">
+    <img src="{{meta.logo}}" alt="Logo" />
+  </div>
+  {{/if}}
+  <h1 class="cover-title">{{meta.title}}</h1>
+  {{#if meta.subtitle}}
+  <p class="cover-subtitle">{{meta.subtitle}}</p>
+  {{/if}}
+  {{#if meta.date}}
+  <p class="cover-date">{{meta.date}}</p>
+  {{/if}}
+</div>
+
+{{#if options.toc}}
+{{> toc content=content}}
+{{/if}}
+
+<!-- Main Content -->
+<div class="content">
+  {{{content}}}
+</div>

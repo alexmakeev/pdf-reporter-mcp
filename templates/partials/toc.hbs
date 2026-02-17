@@ -1,0 +1,19 @@
+<div class="toc-page">
+  <h2 class="toc-title">Table of Contents</h2>
+  <div id="toc-container"></div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('toc-container');
+    const headings = document.querySelectorAll('.content h2, .content h3');
+    let html = '<ul class="toc-list">';
+    headings.forEach(function(h, idx) {
+      const level = h.tagName === 'H3' ? 'toc-item-h3' : 'toc-item-h2';
+      const id = h.id || 'heading-' + idx;
+      h.id = id;
+      html += '<li class="' + level + '"><a href="#' + id + '">' + h.textContent + '</a></li>';
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+  });
+</script>

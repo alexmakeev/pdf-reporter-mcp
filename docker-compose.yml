@@ -1,0 +1,24 @@
+services:
+  pdf-reporter:
+    build: .
+    container_name: pdf-reporter-mcp
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - pdf-output:/app/output
+      - pdf-temp:/app/temp
+    environment:
+      - NODE_ENV=production
+      - TRANSPORT=sse
+      - PORT=3000
+    networks:
+      - dokploy-network
+
+volumes:
+  pdf-output:
+  pdf-temp:
+
+networks:
+  dokploy-network:
+    external: true

@@ -1,0 +1,474 @@
+/* === Theme Variables === */
+:root {
+  --theme-primary: #4169E1;
+  --theme-cover: #4169E1;
+  --theme-primary-dark: #2c4db3;
+}
+
+/* === Base Reset & Typography === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #1a1a1a;
+  padding: 0 10px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* === Cover Page === */
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  height: 100vh;
+  page-break-after: always;
+  background: var(--theme-cover);
+  color: white;
+  padding: 60px;
+  margin: 0 -10px;
+  text-align: center;
+}
+
+.cover-logo {
+  margin-bottom: 40px;
+}
+
+.cover-logo img {
+  max-width: 190px;
+  height: auto;
+  opacity: 0.95;
+}
+
+.cover-title {
+  font-size: 32pt;
+  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.cover-subtitle {
+  font-size: 14pt;
+  font-weight: 300;
+  opacity: 0.85;
+  margin-bottom: 48px;
+}
+
+.cover-date {
+  margin-top: 60px;
+  opacity: 0.7;
+  font-size: 11pt;
+}
+
+/* === Table of Contents === */
+.toc-page {
+  page-break-after: always;
+  padding: 40px 0;
+}
+
+.toc-title {
+  font-size: 20pt;
+  margin-bottom: 24px;
+  color: #1e293b;
+}
+
+.toc-list {
+  list-style: none;
+}
+
+.toc-item-h2 {
+  padding: 8px 0;
+  border-bottom: 1px dotted #cbd5e1;
+  font-size: 12pt;
+}
+
+.toc-item-h3 {
+  padding: 6px 0 6px 20px;
+  font-size: 11pt;
+  color: #475569;
+}
+
+.toc-list a {
+  color: #1e293b;
+  text-decoration: none;
+}
+
+.toc-list a:hover {
+  color: var(--theme-primary);
+}
+
+/* === Content Typography === */
+.content {
+  margin: 20px 0;
+}
+
+.content h1 {
+  font-size: 18pt;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 24px 0 12px;
+  page-break-after: avoid;
+  border-bottom: 2px solid var(--theme-primary);
+  padding-bottom: 8px;
+}
+
+.content h2 {
+  font-size: 16pt;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 20px 0 10px;
+  page-break-after: avoid;
+}
+
+.content h3 {
+  font-size: 14pt;
+  font-weight: 600;
+  color: #334155;
+  margin: 16px 0 8px;
+  page-break-after: avoid;
+}
+
+.content h4 {
+  font-size: 12pt;
+  font-weight: 600;
+  color: #475569;
+  margin: 12px 0 6px;
+}
+
+.content h5 {
+  font-size: 11pt;
+  font-weight: 600;
+  color: #64748b;
+  margin: 10px 0 4px;
+}
+
+.content h6 {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #64748b;
+  margin: 8px 0 4px;
+}
+
+.content p {
+  margin-bottom: 10px;
+  orphans: 3;
+  widows: 3;
+}
+
+.content blockquote {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-left: 4px solid #cbd5e1;
+  background: #f8fafc;
+  font-style: italic;
+  color: #475569;
+}
+
+.content strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.content em {
+  font-style: italic;
+}
+
+.content hr {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* === Tree-Style Lists === */
+.content ul {
+  margin: 8px 0 12px 0;
+  padding-left: 24px;
+  list-style: none;
+}
+
+.content ul > li {
+  position: relative;
+  margin-bottom: 6px;
+  padding-left: 20px;
+}
+
+.content ul > li::before {
+  content: '●';
+  position: absolute;
+  left: 0;
+  color: var(--theme-primary);
+  font-weight: bold;
+}
+
+/* Second level */
+.content ul ul > li::before {
+  content: '○';
+  color: #64748b;
+}
+
+/* Third level */
+.content ul ul ul > li::before {
+  content: '■';
+  color: #94a3b8;
+}
+
+/* Fourth level */
+.content ul ul ul ul > li::before {
+  content: '□';
+  color: #cbd5e1;
+}
+
+/* Fifth level */
+.content ul ul ul ul ul > li::before {
+  content: '▸';
+  color: #e2e8f0;
+}
+
+.content ol {
+  margin: 8px 0 12px 24px;
+  padding-left: 0;
+}
+
+.content ol > li {
+  margin-bottom: 6px;
+  padding-left: 8px;
+}
+
+/* === Code Blocks === */
+pre {
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 9pt;
+  line-height: 1.5;
+  margin: 12px 0;
+  page-break-inside: avoid;
+  border: 1px solid #e2e8f0;
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 9pt;
+}
+
+p code, li code, td code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #c7254e;
+  font-size: 9pt;
+  border: 1px solid #e2e8f0;
+}
+
+/* highlight.js compatibility */
+.hljs-keyword { color: #d73a49; }
+.hljs-string { color: #032f62; }
+.hljs-number { color: #005cc5; }
+.hljs-comment { color: #6a737d; font-style: italic; }
+.hljs-function { color: #6f42c1; }
+.hljs-title { color: #6f42c1; }
+.hljs-built_in { color: #e36209; }
+.hljs-attr { color: #005cc5; }
+.hljs-params { color: #24292e; }
+.hljs-literal { color: #005cc5; }
+.hljs-type { color: #e36209; }
+
+/* === Tables === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin: 16px 0;
+  page-break-inside: avoid;
+  border: 1px solid #e2e8f0;
+}
+
+th {
+  background: var(--theme-primary);
+  color: white;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--theme-primary-dark);
+}
+
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+tr:hover td {
+  background: #f1f5f9;
+}
+
+/* === Callout Blocks === */
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  border-radius: 6px;
+  page-break-inside: avoid;
+  border-left: 4px solid;
+}
+
+.callout-icon {
+  font-size: 18pt;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.callout-content {
+  flex: 1;
+}
+
+.callout-title {
+  font-weight: 700;
+  font-size: 11pt;
+  margin-bottom: 8px;
+}
+
+.callout-body {
+  font-size: 10pt;
+  line-height: 1.5;
+}
+
+/* Callout types (9 total) */
+.callout-idea {
+  background: #FFFBEB;
+  border-left-color: #F59E0B;
+}
+.callout-idea .callout-title { color: #D97706; }
+.callout-idea .callout-body { color: #92400E; }
+
+.callout-automation {
+  background: #F0FDFA;
+  border-left-color: #14B8A6;
+}
+.callout-automation .callout-title { color: #0F766E; }
+.callout-automation .callout-body { color: #134E4A; }
+
+.callout-warning {
+  background: #FFF7ED;
+  border-left-color: #F97316;
+}
+.callout-warning .callout-title { color: #EA580C; }
+.callout-warning .callout-body { color: #9A3412; }
+
+.callout-success {
+  background: #F0FDF4;
+  border-left-color: #22C55E;
+}
+.callout-success .callout-title { color: #16A34A; }
+.callout-success .callout-body { color: #166534; }
+
+.callout-info {
+  background: #EFF6FF;
+  border-left-color: #3B82F6;
+}
+.callout-info .callout-title { color: #2563EB; }
+.callout-info .callout-body { color: #1E40AF; }
+
+.callout-critical {
+  background: #FEF2F2;
+  border-left-color: #EF4444;
+}
+.callout-critical .callout-title { color: #DC2626; }
+.callout-critical .callout-body { color: #991B1B; }
+
+.callout-business {
+  background: #ECFDF5;
+  border-left-color: #10B981;
+}
+.callout-business .callout-title { color: #059669; }
+.callout-business .callout-body { color: #065F46; }
+
+.callout-expert {
+  background: #F5F3FF;
+  border-left-color: #8B5CF6;
+}
+.callout-expert .callout-title { color: #7C3AED; }
+.callout-expert .callout-body { color: #5B21B6; }
+
+.callout-tip {
+  background: #ECFEFF;
+  border-left-color: #06B6D4;
+}
+.callout-tip .callout-title { color: #0891B2; }
+.callout-tip .callout-body { color: #155E75; }
+
+/* === Diagrams === */
+.diagram-container {
+  margin: 20px 0;
+  text-align: center;
+  page-break-inside: avoid;
+}
+
+.diagram-title {
+  font-size: 10pt;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.diagram-svg {
+  display: flex;
+  justify-content: center;
+}
+
+.diagram-svg svg {
+  max-width: 100%;
+  height: auto;
+  max-height: 500px;
+}
+
+/* === Print Rules === */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .cover-page {
+    page-break-after: always;
+  }
+
+  .toc-page {
+    page-break-after: always;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .callout,
+  .diagram-container,
+  table,
+  pre,
+  blockquote {
+    page-break-inside: avoid;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+}

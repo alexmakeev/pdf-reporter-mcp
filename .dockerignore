@@ -1,0 +1,13 @@
+node_modules
+dist
+output
+temp
+.git
+.gitignore
+*.md
+docs/
+materials/
+sandboxes/
+.claude/
+.ckb/
+.beads/
