@@ -171,6 +171,18 @@ All systems operational.
 | `expert` | 🔍 | Expert recommendations |
 | `tip` | 💎 | Tips and best practices |
 
+## Example
+
+See the [demo report](examples/demo-report.pdf) for a complete example featuring:
+- Royal Blue cover page with title and subtitle
+- Auto-generated Table of Contents
+- 3 Mermaid diagrams (architecture graph, sequence diagram, pie chart)
+- All 9 callout types
+- Syntax-highlighted code blocks
+- Styled tables
+
+The demo was generated using [examples/generate-demo.ts](examples/generate-demo.ts).
+
 ## Architecture
 
 **3-step workflow:**
