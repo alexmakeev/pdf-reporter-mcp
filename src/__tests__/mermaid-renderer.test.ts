@@ -84,6 +84,65 @@ describe('mermaid-renderer', () => {
       );
     });
 
+    it('should pass --backgroundColor transparent flag to mmdc', async () => {
+      const diagrams = [{ name: 'test', mermaid: 'graph TD\nA-->B' }];
+
+      vi.mocked(execFile).mockImplementation(((_file, _args, _opts, callback) => {
+        if (callback) callback(null, { stdout: '', stderr: '' });
+      }) as typeof execFile);
+      vi.mocked(readFile).mockResolvedValue('<svg>test</svg>');
+      vi.mocked(writeFile).mockResolvedValue(undefined);
+
+      await renderDiagrams(diagrams, '/tmp/test');
+
+      const execFileCall = vi.mocked(execFile).mock.calls[0];
+      expect(execFileCall).toBeDefined();
+      const args = execFileCall![1] as string[];
+      // Verify --backgroundColor flag is present with 'transparent' value
+      const bgIndex = args.indexOf('--backgroundColor');
+      expect(bgIndex).toBeGreaterThan(-1);
+      expect(args[bgIndex + 1]).toBe('transparent');
+    });
+
+    it('should use node_modules/.bin/mmdc path for execFile', async () => {
+      const diagrams = [{ name: 'test', mermaid: 'graph TD\nA-->B' }];
+
+      vi.mocked(execFile).mockImplementation(((_file, _args, _opts, callback) => {
+        if (callback) callback(null, { stdout: '', stderr: '' });
+      }) as typeof execFile);
+      vi.mocked(readFile).mockResolvedValue('<svg>test</svg>');
+      vi.mocked(writeFile).mockResolvedValue(undefined);
+
+      await renderDiagrams(diagrams, '/tmp/test');
+
+      const execFileCall = vi.mocked(execFile).mock.calls[0];
+      expect(execFileCall).toBeDefined();
+      const mmdcPath = execFileCall![0] as string;
+      // mmdc should be in node_modules/.bin
+      expect(mmdcPath).toContain('node_modules');
+      expect(mmdcPath).toContain('.bin');
+      expect(mmdcPath).toContain('mmdc');
+    });
+
+    it('should use 8-character hex hash for temp filenames', async () => {
+      const diagrams = [{ name: 'test', mermaid: 'graph TD\nA-->B' }];
+
+      vi.mocked(execFile).mockImplementation(((_file, _args, _opts, callback) => {
+        if (callback) callback(null, { stdout: '', stderr: '' });
+      }) as typeof execFile);
+      vi.mocked(readFile).mockResolvedValue('<svg>test</svg>');
+      vi.mocked(writeFile).mockResolvedValue(undefined);
+
+      await renderDiagrams(diagrams, '/tmp/test');
+
+      const writeFileCall = vi.mocked(writeFile).mock.calls[0];
+      expect(writeFileCall).toBeDefined();
+      const writtenPath = String(writeFileCall![0]);
+      // Extract filename: should be 8 hex chars + .mmd
+      const filename = writtenPath.split('/').pop()!;
+      expect(filename).toMatch(/^[0-9a-f]{8}\.mmd$/);
+    });
+
     it('should successfully render multiple diagrams', async () => {
       const diagrams = [
         { name: 'diagram1', mermaid: 'graph TD\nA-->B' },

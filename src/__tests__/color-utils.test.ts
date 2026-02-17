@@ -153,5 +153,89 @@ describe('color-utils', () => {
       const second = generatePalette('#FF6347');
       expect(first).toEqual(second);
     });
+
+    // 11. Regression test for pure red #FF0000 — exact known values
+    // Kills: h+180 -> h-180 mutation (line 61) since palette[5] changes from #d1e6e6 to #e6e6e6
+    it('should produce known exact palette for pure red #FF0000', () => {
+      expect(generatePalette('#FF0000')).toEqual([
+        '#e8c9c9', // Primary pastel (H=0)
+        '#e9ded2', // Analogous +30
+        '#cbe6cb', // Triadic +120
+        '#cbcbe6', // Triadic +240
+        '#eaead7', // Analogous +60
+        '#d1e6e6', // Complementary (H=180) — differs from h-180 mutation which gives #e6e6e6
+        '#efe7e7', // Very light primary
+        '#ac3939', // Medium primary (border/accent)
+      ]);
+    });
+
+    // 12. Regression test for pure green #00FF00 — covers case g: branch in hexToHsl
+    // Kills: NoCoverage mutants on line 25 (the green-dominant case: h = ((b-r)/d + 2) / 6)
+    it('should produce known exact palette for pure green #00FF00', () => {
+      expect(generatePalette('#00FF00')).toEqual([
+        '#c9e8c9', // Primary pastel (H=120)
+        '#d2e9de', // Analogous +30
+        '#cbcbe6', // Triadic +120
+        '#e6cbcb', // Triadic +240
+        '#d7eaea', // Analogous +60
+        '#e6d1e6', // Complementary (H=300)
+        '#e7efe7', // Very light primary
+        '#39ac39', // Medium primary (border/accent)
+      ]);
+    });
+
+    // 15. Regression test for mid-green #40CC20 (H≈110, S≈74%, L≈47%)
+    // Green is dominant channel (G=0.8 > R=0.25 > B=0.125), r != 0 and b != 0
+    // Kills: (b-r)/d -> (b-r)*d mutation (line 25) — *d vs /d differ when d != 1
+    // Also kills: (b-r)/d -> (b+r)/d mutation (line 25) — b+r != b-r when r != 0
+    it('should produce known exact palette for mid-green #40CC20', () => {
+      expect(generatePalette('#40CC20')).toEqual([
+        '#d2e4ce', // Primary pastel (H~110)
+        '#d5e6db', // Analogous +30
+        '#cfd3e3', // Triadic +120
+        '#e3cfd3', // Triadic +240
+        '#dae7e5', // Analogous +60
+        '#e0d3e3', // Complementary
+        '#e9eee8', // Very light primary
+        '#589d49', // Medium primary (border/accent)
+      ]);
+    });
+
+    // 13. Regression test for dark red #CC0000 (H=0, S=100%, L=40%)
+    // Kills: l=(max+min)/2 -> *2 mutation (line 18) — changes saturation branch result
+    // Also kills: l>0.5 -> true/l>=0.5 mutations (line 22) — l=0.4 uses different formula
+    // Also kills: d/(max+min) -> d*(max+min) and d/(max-min) mutations (line 22)
+    // Note: CC0000 and FF0000 produce same normal palette (both H=0, S=100%)
+    // but mutations in hexToHsl produce different results for CC0000 (l=40%) vs FF0000 (l=50%)
+    it('should produce known exact palette for dark red #CC0000', () => {
+      expect(generatePalette('#CC0000')).toEqual([
+        '#e8c9c9', // Primary pastel (H=0, S=100%)
+        '#e9ded2', // Analogous +30
+        '#cbe6cb', // Triadic +120
+        '#cbcbe6', // Triadic +240
+        '#eaead7', // Analogous +60
+        '#d1e6e6', // Complementary
+        '#efe7e7', // Very light primary
+        '#ac3939', // Medium primary (border/accent)
+      ]);
+    });
+
+    // 14. Regression test for dark rose #C83264 (H=340, S=60%, L=49%)
+    // This color has: red is max, g < b (g=50, b=100 in 0-255), d != 1
+    // Kills: (g-b)/d -> (g+b)/d hue mutation (line 24) — hue changes from 340 to 420 degrees
+    // Also kills: /d -> *d hue mutation (line 24) — hue changes from 340 to ~353 degrees
+    // Also kills: /6 -> *6 hue mutation (line 24) — hue changes drastically
+    it('should produce known exact palette for dark rose #C83264', () => {
+      expect(generatePalette('#C83264')).toEqual([
+        '#e2d0d6', // Primary pastel (H=340)
+        '#e5d9d7', // Analogous +30
+        '#d6e1d1', // Triadic +120
+        '#d1d6e1', // Triadic +240
+        '#e6e2db', // Analogous +60
+        '#d5e2dd', // Complementary (H=160)
+        '#ede8ea', // Very light primary
+        '#955067', // Medium primary (border/accent)
+      ]);
+    });
   });
 });

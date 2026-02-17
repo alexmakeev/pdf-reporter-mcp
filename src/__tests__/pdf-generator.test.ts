@@ -301,5 +301,187 @@ describe('pdf-generator', () => {
       result = await generatePdf(html, options);
       expect(result.size).toBe('2.0 MB');
     });
+
+    it('should format exactly 1023 bytes as B (below 1024 threshold)', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'test',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      mockPage.pdf.mockResolvedValueOnce(Buffer.alloc(1023));
+      const result = await generatePdf(html, options);
+      // 1023 < 1024 → should be "1023 B", not KB
+      expect(result.size).toBe('1023 B');
+    });
+
+    it('should format exactly 1024 bytes as KB (at 1024 threshold)', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'test',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      mockPage.pdf.mockResolvedValueOnce(Buffer.alloc(1024));
+      const result = await generatePdf(html, options);
+      // 1024 is NOT < 1024, so it should be "1.0 KB"
+      expect(result.size).toBe('1.0 KB');
+    });
+
+    it('should format exactly 1024*1024 bytes as MB (at 1MB threshold)', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'test',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      mockPage.pdf.mockResolvedValueOnce(Buffer.alloc(1024 * 1024));
+      const result = await generatePdf(html, options);
+      // 1024*1024 is NOT < 1024*1024, so it should be "1.0 MB"
+      expect(result.size).toBe('1.0 MB');
+    });
+
+    it('should create output directory with recursive flag', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/deep/nested/output',
+        filename: 'test',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      await generatePdf(html, options);
+
+      expect(mkdir).toHaveBeenCalledWith('/tmp/deep/nested/output', { recursive: true });
+    });
+
+    it('should include YYYY-MM-DD date (sliced to 10 chars) in output filename', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'dated-report',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      await generatePdf(html, options);
+
+      const writeFileCall = vi.mocked(writeFile).mock.calls[0];
+      expect(writeFileCall).toBeDefined();
+      const outputPath = String(writeFileCall![0]);
+      // The date in filename must be exactly YYYY-MM-DD (10 chars), not the full ISO string
+      expect(outputPath).toMatch(/dated-report-\d{4}-\d{2}-\d{2}\.pdf$/);
+    });
+
+    it('should use default header template with filename when headerTemplate is not false', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'my-report',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: undefined as unknown as string,
+          footerTemplate: undefined as unknown as string,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      await generatePdf(html, options);
+
+      const pdfCall = mockPage.pdf.mock.calls[0];
+      expect(pdfCall).toBeDefined();
+      const pdfOptions = pdfCall![0];
+      // Default header should contain the filename with dashes replaced by spaces
+      expect(pdfOptions.headerTemplate).toContain('my report');
+      // Default footer should contain pageNumber span
+      expect(pdfOptions.footerTemplate).toContain('pageNumber');
+      expect(pdfOptions.footerTemplate).toContain('totalPages');
+    });
+
+    it('should count PDF pages from binary content matching /Type /Page pattern', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'test',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      // Create a buffer that simulates a 3-page PDF binary with /Type /Page entries
+      // The pattern /\/Type[\s]*\/Page[^s]/g matches "/Type /Page " or "/Type/Page "
+      // but NOT "/Type /Pages" (which is the parent node)
+      const fakePdfContent =
+        'header /Type /Page X body1 /Type /Page Y body2 /Type /Pages Z /Type /Page W footer';
+      const pdfBuffer = Buffer.from(fakePdfContent, 'latin1');
+      mockPage.pdf.mockResolvedValueOnce(pdfBuffer);
+
+      const result = await generatePdf(html, options);
+
+      // 3 occurrences of "/Type /Page " (not "/Type /Pages")
+      expect(result.pages).toBe(3);
+    });
+
+    it('should count PDF pages matching /Type/Page without whitespace', async () => {
+      const html = '<html><body>Test</body></html>';
+      const options: PdfGeneratorOptions = {
+        outputDir: '/tmp/output',
+        filename: 'test',
+        options: {
+          pageSize: 'A4',
+          toc: false,
+          headerTemplate: false,
+          footerTemplate: false,
+          margins: { top: '17mm', bottom: '17mm', left: '13mm', right: '13mm' },
+        },
+      };
+
+      // [\s]* (zero or more) also matches /Type/Page with NO whitespace
+      // while [\s] (exactly one) would NOT match this case
+      const fakePdfContent = 'start /Type/Page X /Type/Page Y /Type/Pages Z end';
+      const pdfBuffer = Buffer.from(fakePdfContent, 'latin1');
+      mockPage.pdf.mockResolvedValueOnce(pdfBuffer);
+
+      const result = await generatePdf(html, options);
+
+      // 2 occurrences of /Type/Page (no whitespace), not /Type/Pages
+      expect(result.pages).toBe(2);
+    });
   });
 });

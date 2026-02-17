@@ -259,6 +259,102 @@ describe('template-engine', () => {
       );
     });
 
+    it('should skip non-.hbs files in partials directory', async () => {
+      // When readdir returns non-.hbs files, they should be skipped (not registered as partials)
+      vi.mocked(readdir).mockResolvedValue([
+        'header.hbs',
+        'readme.txt',
+        'styles.css',
+        '.DS_Store',
+      ] as unknown as Awaited<ReturnType<typeof readdir>>);
+
+      vi.mocked(readFile).mockImplementation((async (path: unknown) => {
+        const pathStr = String(path);
+        if (pathStr.includes('base.hbs')) return mockBaseTemplate;
+        if (pathStr.includes('generic-test-skip.hbs')) return mockReportTemplate;
+        if (pathStr.includes('report.css')) return mockCss;
+        if (pathStr.includes('header.hbs')) return '<header>{{meta.title}}</header>';
+        // Non-.hbs files should never be read as partials
+        if (pathStr.endsWith('.txt') || pathStr.endsWith('.DS_Store')) {
+          throw new Error(`Should not read non-.hbs file: ${pathStr}`);
+        }
+        throw new Error(`File not found: ${pathStr}`);
+      }) as typeof readFile);
+
+      // Should succeed without reading non-.hbs files as partials
+      const result = await compileTemplate(baseContext, 'generic-test-skip');
+      expect(result).toBeDefined();
+
+      // Only header.hbs should have been read from the partials directory
+      // (not readme.txt, styles.css, .DS_Store)
+      const readFileCalls = vi.mocked(readFile).mock.calls.map(call => String(call[0]));
+      const partialFilesRead = readFileCalls.filter(p => {
+        // Exclude base template, report template, and CSS
+        return !p.includes('base.hbs') && !p.includes('generic-test-skip') && !p.includes('report.css');
+      });
+      // Only the .hbs partial file should have been read
+      expect(partialFilesRead).toHaveLength(1);
+      expect(partialFilesRead[0]).toContain('header.hbs');
+    });
+
+    it('should read report template from reports subdirectory', async () => {
+      await compileTemplate(baseContext, 'generic-test-6');
+
+      // The readFile calls should include a path with 'reports' directory component
+      const readFileCalls = vi.mocked(readFile).mock.calls.map(call => String(call[0]));
+      const templateCall = readFileCalls.find(p => p.includes('generic-test-6'));
+      expect(templateCall).toBeDefined();
+      expect(templateCall).toContain('reports');
+    });
+
+    it('should read CSS from styles directory', async () => {
+      await compileTemplate(baseContext, 'generic-test-7');
+
+      const readFileCalls = vi.mocked(readFile).mock.calls.map(call => String(call[0]));
+      const cssCall = readFileCalls.find(p => p.includes('report.css'));
+      expect(cssCall).toBeDefined();
+      expect(cssCall).toContain('styles');
+    });
+
+    it('should read base template from templates directory', async () => {
+      await compileTemplate(baseContext, 'generic-test-8');
+
+      const readFileCalls = vi.mocked(readFile).mock.calls.map(call => String(call[0]));
+      const baseCall = readFileCalls.find(p => p.includes('base.hbs'));
+      expect(baseCall).toBeDefined();
+      expect(baseCall).toContain('templates');
+    });
+
+    it('should call formatDate with undefined date value to return current date', async () => {
+      // The formatDate helper has a branch: if (!dateStr) return current date
+      // To exercise it, pass a context value that's undefined
+      const templateWithUndefinedDate = `
+<div class="cover">
+<h1>{{meta.title}}</h1>
+<p>{{formatDate meta.date}}</p>
+</div>
+{{{content}}}
+`;
+
+      vi.mocked(readFile).mockImplementation((async (path: unknown) => {
+        const pathStr = String(path);
+        if (pathStr.includes('base.hbs')) return mockBaseTemplate;
+        if (pathStr.includes('no-date-undef.hbs')) return templateWithUndefinedDate;
+        if (pathStr.includes('report.css')) return mockCss;
+        throw new Error(`File not found: ${pathStr}`);
+      }) as typeof readFile);
+
+      // Context where meta.date is undefined (not set)
+      const contextUndefinedDate: PipelineContext = {
+        ...baseContext,
+        meta: { title: 'No Date Report' },
+      };
+
+      const result = await compileTemplate(contextUndefinedDate, 'no-date-undef');
+      // formatDate with undefined should return today's date in en-US long format
+      expect(result).toMatch(/[A-Z][a-z]+ \d+, \d{4}/);
+    });
+
     it('should handle missing subtitle gracefully', async () => {
       const contextWithoutSubtitle: PipelineContext = {
         ...baseContext,

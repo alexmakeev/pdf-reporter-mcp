@@ -182,6 +182,142 @@ describe('pipeline', () => {
       expect(pdfOptions.filename).not.toContain(')');
     });
 
+    it('should strip multiple trailing dashes from filename', async () => {
+      // The /-+$/ regex should strip all trailing dashes, not just one
+      const input: GeneratePdfInput = {
+        title: 'Report ---',
+        content: '<p>Content</p>',
+      };
+
+      await generatePdfFromHtml(input);
+
+      const call = vi.mocked(generatePdf).mock.calls[0];
+      expect(call).toBeDefined();
+      const pdfOptions = call![1];
+      // Title "Report ---" → lowercased: "report ---" → replace non-alnum: "report---" → strip trailing dashes: "report"
+      expect(pdfOptions.filename).toBe('report');
+      expect(pdfOptions.filename).not.toMatch(/-$/);
+    });
+
+    it('should include long-format month in meta date', async () => {
+      const input: GeneratePdfInput = {
+        title: 'Date Test',
+        content: '<p>Content</p>',
+      };
+
+      await generatePdfFromHtml(input);
+
+      const call = vi.mocked(compileTemplate).mock.calls[0];
+      expect(call).toBeDefined();
+      const context = call![0];
+      // The date should be in long format (e.g. "February 17, 2026"), not ISO format
+      expect(context.meta.date).toMatch(/[A-Z][a-z]+ \d+, \d{4}/);
+    });
+
+    it('should use OUTPUT_DIR env var for output directory', async () => {
+      const originalEnv = process.env['OUTPUT_DIR'];
+      process.env['OUTPUT_DIR'] = '/custom/output/path';
+
+      try {
+        const input: GeneratePdfInput = {
+          title: 'Test',
+          content: '<p>Content</p>',
+        };
+
+        await generatePdfFromHtml(input);
+
+        const call = vi.mocked(generatePdf).mock.calls[0];
+        expect(call).toBeDefined();
+        expect(call![1].outputDir).toBe('/custom/output/path');
+      } finally {
+        if (originalEnv === undefined) {
+          delete process.env['OUTPUT_DIR'];
+        } else {
+          process.env['OUTPUT_DIR'] = originalEnv;
+        }
+      }
+    });
+
+    it('should default to output subdirectory when OUTPUT_DIR is not set', async () => {
+      const originalEnv = process.env['OUTPUT_DIR'];
+      delete process.env['OUTPUT_DIR'];
+
+      try {
+        const input: GeneratePdfInput = {
+          title: 'Test',
+          content: '<p>Content</p>',
+        };
+
+        await generatePdfFromHtml(input);
+
+        const call = vi.mocked(generatePdf).mock.calls[0];
+        expect(call).toBeDefined();
+        expect(call![1].outputDir).toContain('output');
+      } finally {
+        if (originalEnv !== undefined) {
+          process.env['OUTPUT_DIR'] = originalEnv;
+        }
+      }
+    });
+
+    it('should use THEME_PRIMARY_COLOR env var for theme', async () => {
+      const originalEnv = process.env['THEME_PRIMARY_COLOR'];
+      process.env['THEME_PRIMARY_COLOR'] = '#FF0000';
+
+      try {
+        const input: GeneratePdfInput = {
+          title: 'Theme Test',
+          content: '<p>Content</p>',
+        };
+
+        await generatePdfFromHtml(input);
+
+        const call = vi.mocked(compileTemplate).mock.calls[0];
+        expect(call).toBeDefined();
+        const context = call![0];
+        expect(context.theme.primaryColor).toBe('#FF0000');
+      } finally {
+        if (originalEnv === undefined) {
+          delete process.env['THEME_PRIMARY_COLOR'];
+        } else {
+          process.env['THEME_PRIMARY_COLOR'] = originalEnv;
+        }
+      }
+    });
+
+    it('should use THEME_COVER_COLOR env var separately from primary color', async () => {
+      const originalPrimary = process.env['THEME_PRIMARY_COLOR'];
+      const originalCover = process.env['THEME_COVER_COLOR'];
+      process.env['THEME_PRIMARY_COLOR'] = '#FF0000';
+      process.env['THEME_COVER_COLOR'] = '#00FF00';
+
+      try {
+        const input: GeneratePdfInput = {
+          title: 'Cover Color Test',
+          content: '<p>Content</p>',
+        };
+
+        await generatePdfFromHtml(input);
+
+        const call = vi.mocked(compileTemplate).mock.calls[0];
+        expect(call).toBeDefined();
+        const context = call![0];
+        expect(context.theme.primaryColor).toBe('#FF0000');
+        expect(context.theme.coverColor).toBe('#00FF00');
+      } finally {
+        if (originalPrimary === undefined) {
+          delete process.env['THEME_PRIMARY_COLOR'];
+        } else {
+          process.env['THEME_PRIMARY_COLOR'] = originalPrimary;
+        }
+        if (originalCover === undefined) {
+          delete process.env['THEME_COVER_COLOR'];
+        } else {
+          process.env['THEME_COVER_COLOR'] = originalCover;
+        }
+      }
+    });
+
     it('should propagate PdfReporterError from template engine', async () => {
       const input: GeneratePdfInput = {
         title: 'Test',
@@ -281,11 +417,32 @@ describe('pipeline', () => {
       expect(result).toEqual({ name: 'flow', svg: '<svg>diagram</svg>' });
     });
 
+    it('should use pdf-reporter- prefix for temp dir', async () => {
+      vi.mocked(renderDiagrams).mockResolvedValue({
+        flow: { type: 'rendered-diagram', svg: '<svg>diagram</svg>' },
+      });
+
+      await renderDiagram({ name: 'flow', mermaid: 'graph TD\nA-->B' });
+
+      expect(mkdtemp).toHaveBeenCalledWith(
+        expect.stringContaining('pdf-reporter-'),
+      );
+    });
+
     it('should throw MERMAID_RENDER_FAILED if diagram not in results', async () => {
       vi.mocked(renderDiagrams).mockResolvedValue({});
 
       await expect(renderDiagram({ name: 'missing', mermaid: 'graph TD\nA-->B' })).rejects.toMatchObject({
         code: 'MERMAID_RENDER_FAILED',
+      });
+    });
+
+    it('should include diagram name in MERMAID_RENDER_FAILED error message', async () => {
+      vi.mocked(renderDiagrams).mockResolvedValue({});
+
+      await expect(renderDiagram({ name: 'my-flow', mermaid: 'graph TD\nA-->B' })).rejects.toMatchObject({
+        code: 'MERMAID_RENDER_FAILED',
+        message: expect.stringContaining('my-flow'),
       });
     });
 
@@ -328,6 +485,40 @@ describe('pipeline', () => {
       expect(result.html).toContain('<svg>diagram</svg>');
       // Verify renderMarkdown was called with the original markdown text
       expect(renderMarkdown).toHaveBeenCalledWith('Before {{diagram:flow}} After');
+    });
+
+    it('should use diagram name in placeholder pattern {{diagram:name}}', async () => {
+      // The placeholder must use the diagram name — if placeholder was empty string, no replacement would occur
+      vi.mocked(renderMarkdown).mockResolvedValue('{{diagram:arch}} {{diagram:flow}}');
+
+      const result = await renderContent({
+        markdown: 'content',
+        diagrams: [
+          { name: 'arch', svg: '<svg>arch-svg</svg>' },
+          { name: 'flow', svg: '<svg>flow-svg</svg>' },
+        ],
+      });
+
+      // Both placeholders must be replaced using correct names
+      expect(result.html).not.toContain('{{diagram:arch}}');
+      expect(result.html).not.toContain('{{diagram:flow}}');
+      expect(result.html).toContain('<svg>arch-svg</svg>');
+      expect(result.html).toContain('<svg>flow-svg</svg>');
+    });
+
+    it('should replace all occurrences of the same diagram placeholder', async () => {
+      // replaceAll not replace — need to verify all occurrences are replaced
+      vi.mocked(renderMarkdown).mockResolvedValue('{{diagram:flow}} and again {{diagram:flow}}');
+
+      const result = await renderContent({
+        markdown: 'content',
+        diagrams: [{ name: 'flow', svg: '<svg>diagram</svg>' }],
+      });
+
+      expect(result.html).not.toContain('{{diagram:flow}}');
+      // Both occurrences should have been replaced
+      const matches = result.html.match(/<svg>diagram<\/svg>/g);
+      expect(matches).toHaveLength(2);
     });
 
     it('should handle missing diagrams array gracefully', async () => {
