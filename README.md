@@ -1,7 +1,9 @@
 [![CI](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-77%20passed-brightgreen)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-164%20passed-brightgreen)]()
+[![Mutation Score](https://img.shields.io/badge/mutation%20score-94%25-brightgreen)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20-green)](https://nodejs.org/)
 
 # PDF Reporter MCP
 
@@ -18,20 +20,38 @@ Multi-purpose MCP server for generating SVG diagrams and PDF documents. Render M
 
 ## Quick Start
 
-### Local Development
+### Installation
 
 ```bash
+git clone https://github.com/alexmakeev/pdf-reporter-mcp.git
+cd pdf-reporter-mcp
 npm install
-npm run dev
 ```
 
-Server runs on stdio by default. Compatible with Claude Desktop via stdio transport.
-
-### Docker
+### Usage
 
 ```bash
-docker build -t pdf-reporter-mcp .
+# Development
+npm run dev
+
+# Production
+npm run build && npm start
+
+# Docker
 docker compose up
+```
+
+### MCP Client Configuration
+
+```json
+{
+  "mcpServers": {
+    "pdf-reporter": {
+      "command": "node",
+      "args": ["/path/to/pdf-reporter-mcp/dist/server.js"]
+    }
+  }
+}
 ```
 
 ## MCP Tools
@@ -122,27 +142,15 @@ Get the input schema for a specific template.
 }
 ```
 
-## Theme Configuration
+## Workflow
 
-Customize document appearance via environment variables:
+The typical workflow is three steps:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `THEME_PRIMARY_COLOR` | `#4169E1` | Accent color for headings, callouts, and UI elements |
-| `THEME_COVER_COLOR` | Same as primary | Cover page background color |
-
-**Example:**
-```bash
-export THEME_PRIMARY_COLOR="#E81E63"
-export THEME_COVER_COLOR="#880E4F"
-npm run dev
 ```
-
-Colors are applied to:
-- Cover page background
-- Heading text
-- Callout borders and backgrounds
-- Links and accents
+1. render_diagram  →  Mermaid source  →  SVG string
+2. render_content  →  Markdown + SVGs  →  HTML
+3. generate_pdf    →  HTML + metadata  →  PDF file
+```
 
 ## Callout Syntax
 
@@ -177,47 +185,71 @@ All systems operational.
 
 ## Example
 
-See the [demo report](examples/demo-report.pdf) for a complete example featuring:
-- Royal Blue cover page with title and subtitle
-- Auto-generated Table of Contents
-- 3 Mermaid diagrams (architecture graph, sequence diagram, pie chart)
-- All 9 callout types
-- Syntax-highlighted code blocks
-- Styled tables
+See the [demo report](examples/demo-report.pdf) for a complete example featuring all capabilities.
 
-The demo was generated using [examples/generate-demo.ts](examples/generate-demo.ts).
+Generated with [examples/generate-demo.ts](examples/generate-demo.ts).
+
+## Theme Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `THEME_PRIMARY_COLOR` | `#4169E1` | Primary accent color (Royal Blue) |
+| `THEME_COVER_COLOR` | same as primary | Cover page accent color |
+
+The server auto-generates a pastel palette from the primary color for backgrounds, table headers, and cover elements. All text remains dark for readability.
+
+**Example:**
+```bash
+export THEME_PRIMARY_COLOR="#E81E63"
+export THEME_COVER_COLOR="#880E4F"
+npm run dev
+```
 
 ## Architecture
 
-**3-step workflow:**
-
 ```
-Step 1: render_diagram (for each diagram)
-  Mermaid definition → SVG
-  ↓
-Step 2: render_content
-  Markdown + callouts + SVG references → HTML
-  ↓
-Step 3: generate_pdf
-  Title + HTML → PDF file
-  ↓
-output: { path, size, pages }
+MCP Input
+  → Mermaid Renderer (mmdc CLI → SVG)
+  → Callout Parser (:::syntax → HTML)
+  → Markdown Renderer (marked + highlight.js)
+  → Template Engine (Handlebars)
+  → PDF Generator (Puppeteer)
 ```
-
-**Full pipeline (internal to generate_pdf):**
-1. Resolve Options — Apply defaults to PDF options
-2. Create Metadata — Extract title, subtitle, logo, date
-3. Compile Template — Handlebars with context
-4. Generate PDF — Puppeteer headless Chrome → PDF file
 
 ## Development
 
-See [docs/dev.md](docs/dev.md) for development setup, testing, and architecture details.
+```bash
+npm run dev          # Start dev server
+npm test             # Run 164 tests
+npm run test:watch   # Watch mode
+npm run test:mutation # Mutation testing (Stryker)
+npm run build        # TypeScript compilation
+```
 
-## Production Deployment
+See [docs/dev.md](docs/dev.md) for the full developer guide.
 
-See [docs/prod.md](docs/prod.md) for Docker build, deployment, and configuration.
+## Deployment
+
+See [docs/prod.md](docs/prod.md) for Docker and Dokploy deployment instructions.
+
+## Testing
+
+- **164 unit tests** across 8 test suites (vitest)
+- **94.21% mutation score** via Stryker (minimum 89% per module)
+- All tests run offline with mocked dependencies
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Runtime | Node.js 20+, TypeScript (strict) |
+| PDF | Puppeteer (headless Chrome) |
+| Diagrams | @mermaid-js/mermaid-cli |
+| Templates | Handlebars |
+| Markdown | marked + highlight.js |
+| MCP | @modelcontextprotocol/sdk |
+| Tests | vitest + Stryker |
 
 ## License
 
-MIT
+[MIT](LICENSE) © Alexander Makeev
