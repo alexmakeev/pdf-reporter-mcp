@@ -1,4 +1,5 @@
 [![CI](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/ci.yml)
+[![Docker](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/docker.yml/badge.svg)](https://github.com/alexmakeev/pdf-reporter-mcp/actions/workflows/docker.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org/)
 [![Tests](https://img.shields.io/badge/tests-164%20passed-brightgreen)]()
 [![Mutation Score](https://img.shields.io/badge/mutation%20score-94%25-brightgreen)]()
@@ -37,7 +38,10 @@ npm run dev
 # Production
 npm run build && npm start
 
-# Docker
+# Docker (pre-built image)
+docker run --rm -p 3000:3000 -e TRANSPORT=sse ghcr.io/alexmakeev/pdf-reporter-mcp:latest
+
+# Docker (build locally)
 docker compose up
 ```
 
@@ -53,6 +57,51 @@ docker compose up
   }
 }
 ```
+
+## Docker
+
+Pre-built Docker images are published to GitHub Container Registry on every push to `main`.
+
+### Pull and Run
+
+```bash
+docker pull ghcr.io/alexmakeev/pdf-reporter-mcp:latest
+docker run --rm -p 3000:3000 -e TRANSPORT=sse ghcr.io/alexmakeev/pdf-reporter-mcp:latest
+```
+
+### MCP Client Configuration (Docker)
+
+```json
+{
+  "mcpServers": {
+    "pdf-reporter": {
+      "url": "http://localhost:3000/sse"
+    }
+  }
+}
+```
+
+### Available Tags
+
+| Tag | Description |
+|-----|-------------|
+| `latest` | Latest build from `main` branch |
+| `main` | Same as `latest` |
+| `v1.0.0` | Specific release version |
+| `sha-abc1234` | Specific commit build |
+
+### Custom Configuration
+
+```bash
+docker run --rm \
+  -p 3000:3000 \
+  -e TRANSPORT=sse \
+  -e THEME_PRIMARY_COLOR="#E81E63" \
+  -v $(pwd)/output:/app/output \
+  ghcr.io/alexmakeev/pdf-reporter-mcp:latest
+```
+
+---
 
 ## MCP Tools
 
