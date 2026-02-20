@@ -2,7 +2,9 @@
 // server.ts -- PDF Reporter MCP Server Entry Point
 // =============================================================================
 
+import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
@@ -244,10 +246,59 @@ server.tool(
 // Main Entry Point
 // -----------------------------------------------------------------------------
 
-async function main(): Promise<void> {
+async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('PDF Reporter MCP server started on stdio');
+}
+
+async function startSse(): Promise<void> {
+  const port = parseInt(process.env.PORT ?? '3000', 10);
+  const transports = new Map<string, SSEServerTransport>();
+
+  const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    const url = new URL(req.url ?? '/', `http://localhost:${port}`);
+
+    if (req.method === 'GET' && url.pathname === '/sse') {
+      const transport = new SSEServerTransport('/messages', res);
+      transports.set(transport.sessionId, transport);
+      res.on('close', () => {
+        transports.delete(transport.sessionId);
+      });
+      await server.connect(transport);
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/messages') {
+      const sessionId = url.searchParams.get('sessionId');
+      if (!sessionId) {
+        res.writeHead(400).end('Missing sessionId');
+        return;
+      }
+      const transport = transports.get(sessionId);
+      if (!transport) {
+        res.writeHead(400).end(`No transport found for sessionId: ${sessionId}`);
+        return;
+      }
+      await transport.handlePostMessage(req, res);
+      return;
+    }
+
+    res.writeHead(404).end('Not found');
+  });
+
+  httpServer.listen(port, () => {
+    console.error(`PDF Reporter MCP server started on SSE (port ${port})`);
+  });
+}
+
+async function main(): Promise<void> {
+  const transport = process.env.TRANSPORT;
+  if (transport === 'sse') {
+    await startSse();
+  } else {
+    await startStdio();
+  }
 }
 
 main().catch((error) => {
