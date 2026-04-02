@@ -3,6 +3,7 @@ services:
     build: .
     container_name: pdf-reporter-mcp
     restart: unless-stopped
+    init: true
     ports:
       - "${PORT:-17002}:17002"
     volumes:
