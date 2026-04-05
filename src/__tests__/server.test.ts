@@ -5,9 +5,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
 
-// Mock the pipeline module with the 3 granular functions
+// Mock the pipeline module with the 2 granular functions
 vi.mock('../pipeline.js', () => ({
-  renderDiagram: vi.fn(),
   renderContent: vi.fn(),
   generatePdfFromHtml: vi.fn(),
 }));
@@ -30,7 +29,7 @@ vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
 }));
 
 // Import mocked pipeline functions and the server (triggers registration)
-import { renderDiagram, renderContent, generatePdfFromHtml } from '../pipeline.js';
+import { renderContent, generatePdfFromHtml } from '../pipeline.js';
 import { PdfReporterError } from '../types.js';
 
 // Side-effect import: registers tools into registeredTools map
@@ -65,61 +64,6 @@ describe('server tools', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-  });
-
-  // ---------------------------------------------------------------------------
-  // render_diagram
-  // ---------------------------------------------------------------------------
-
-  describe('render_diagram', () => {
-    it('renders a diagram and returns JSON with name and svg', async () => {
-      vi.mocked(renderDiagram).mockResolvedValue({
-        name: 'arch',
-        svg: '<svg>...</svg>',
-      });
-
-      const response = await registeredTools['render_diagram']({
-        name: 'arch',
-        mermaid: 'graph LR\n  A --> B',
-      });
-
-      expect(renderDiagram).toHaveBeenCalledWith({
-        name: 'arch',
-        mermaid: 'graph LR\n  A --> B',
-      });
-
-      const parsed = JSON.parse(getTextContent(response));
-      expect(parsed).toEqual({ name: 'arch', svg: '<svg>...</svg>' });
-      expect(isError(response)).toBe(false);
-    });
-
-    it('returns structured error response on PdfReporterError', async () => {
-      vi.mocked(renderDiagram).mockRejectedValue(
-        new PdfReporterError('MERMAID_RENDER_FAILED', 'Diagram rendering failed'),
-      );
-
-      const response = await registeredTools['render_diagram']({
-        name: 'bad',
-        mermaid: 'invalid mermaid',
-      });
-
-      expect(isError(response)).toBe(true);
-      expect(getTextContent(response)).toBe(
-        'Error [MERMAID_RENDER_FAILED]: Diagram rendering failed',
-      );
-    });
-
-    it('returns internal error on unexpected exception', async () => {
-      vi.mocked(renderDiagram).mockRejectedValue(new Error('Unexpected failure'));
-
-      const response = await registeredTools['render_diagram']({
-        name: 'x',
-        mermaid: '...',
-      });
-
-      expect(isError(response)).toBe(true);
-      expect(getTextContent(response)).toBe('Internal error: Unexpected failure');
-    });
   });
 
   // ---------------------------------------------------------------------------
@@ -377,7 +321,7 @@ describe('server tools', () => {
 
   describe('error handling', () => {
     it('formats PdfReporterError with code and message', () => {
-      const error = new PdfReporterError('MERMAID_RENDER_FAILED', 'Diagram rendering failed');
+      const error = new PdfReporterError('PDF_GENERATION_FAILED', 'PDF generation failed');
 
       const response = {
         content: [
@@ -391,7 +335,7 @@ describe('server tools', () => {
 
       expect(response.isError).toBe(true);
       expect(response.content[0].text).toBe(
-        'Error [MERMAID_RENDER_FAILED]: Diagram rendering failed',
+        'Error [PDF_GENERATION_FAILED]: PDF generation failed',
       );
     });
 

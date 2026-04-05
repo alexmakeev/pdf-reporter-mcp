@@ -46,23 +46,9 @@ export interface GeneratePdfInput {
   options?: PdfOptions;
 }
 
-export interface DiagramInput {
-  /** Diagram identifier, used as placeholder {{diagram:name}} in content */
-  name: string;
-  /** Mermaid diagram source code */
-  mermaid: string;
-}
-
 // -----------------------------------------------------------------------------
 // Granular MCP Tool Inputs/Outputs
 // -----------------------------------------------------------------------------
-
-export interface RenderDiagramInput {
-  /** Diagram identifier */
-  name: string;
-  /** Mermaid diagram source code */
-  mermaid: string;
-}
 
 export interface RenderDiagramOutput {
   /** Diagram identifier */
@@ -211,7 +197,6 @@ export interface PdfGeneratorOptions {
 export type PdfErrorCode =
   | 'VALIDATION_ERROR'
   | 'TEMPLATE_NOT_FOUND'
-  | 'MERMAID_RENDER_FAILED'
   | 'MARKDOWN_PARSE_FAILED'
   | 'TEMPLATE_COMPILE_FAILED'
   | 'PDF_GENERATION_FAILED'

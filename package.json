@@ -13,7 +13,6 @@
     "test:mutation": "stryker run"
   },
   "dependencies": {
-    "@mermaid-js/mermaid-cli": "^11.12.0",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "handlebars": "^4.7.8",
     "highlight.js": "^11.11.1",

@@ -2,11 +2,8 @@
 // pipeline.ts -- PDF Generation Pipeline
 // =============================================================================
 
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { resolveOptions } from './config-loader.js';
-import { renderDiagrams } from './mermaid-renderer.js';
 import { renderMarkdown } from './markdown-renderer.js';
 import { compileTemplate } from './template-engine.js';
 import { generatePdf as generatePdfFile } from './pdf-generator.js';
@@ -14,8 +11,6 @@ import { generatePalette } from './color-utils.js';
 import {
   PdfReporterError,
   DEFAULT_THEME,
-  type RenderDiagramInput,
-  type RenderDiagramOutput,
   type RenderContentInput,
   type RenderContentOutput,
   type GeneratePdfInput,
@@ -40,32 +35,7 @@ function getThemeConfig(): ThemeConfig {
 }
 
 // -----------------------------------------------------------------------------
-// Step 1: render_diagram
-// -----------------------------------------------------------------------------
-
-/**
- * Render a single Mermaid diagram to SVG.
- * Creates a temp dir, invokes mmdc, returns the SVG string, then cleans up.
- */
-export async function renderDiagram(input: RenderDiagramInput): Promise<RenderDiagramOutput> {
-  const tempDir = await mkdtemp(join(tmpdir(), 'pdf-reporter-'));
-  try {
-    const results = await renderDiagrams([{ name: input.name, mermaid: input.mermaid }], tempDir);
-    const diagram = results[input.name];
-    if (!diagram) {
-      throw new PdfReporterError(
-        'MERMAID_RENDER_FAILED',
-        `Diagram '${input.name}' render returned no result`,
-      );
-    }
-    return { name: input.name, svg: diagram.svg };
-  } finally {
-    await rm(tempDir, { recursive: true, force: true }).catch(() => {});
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Step 2: render_content
+// Step 1: render_content
 // -----------------------------------------------------------------------------
 
 /**
@@ -89,7 +59,7 @@ export async function renderContent(input: RenderContentInput): Promise<RenderCo
 }
 
 // -----------------------------------------------------------------------------
-// Step 3: generate_pdf
+// Step 2: generate_pdf
 // -----------------------------------------------------------------------------
 
 /**

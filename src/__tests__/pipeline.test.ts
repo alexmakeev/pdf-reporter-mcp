@@ -3,14 +3,10 @@
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generatePdfPipeline, generatePdfFromHtml, renderDiagram, renderContent } from '../pipeline.js';
+import { generatePdfPipeline, generatePdfFromHtml, renderContent } from '../pipeline.js';
 import { PdfReporterError, type GeneratePdfInput } from '../types.js';
 
 // Mock all downstream modules
-vi.mock('../mermaid-renderer.js', () => ({
-  renderDiagrams: vi.fn(),
-}));
-
 vi.mock('../markdown-renderer.js', () => ({
   renderMarkdown: vi.fn(),
 }));
@@ -23,25 +19,15 @@ vi.mock('../pdf-generator.js', () => ({
   generatePdf: vi.fn(),
 }));
 
-vi.mock('node:fs/promises', () => ({
-  mkdtemp: vi.fn(),
-  rm: vi.fn(),
-}));
-
-import { renderDiagrams } from '../mermaid-renderer.js';
 import { renderMarkdown } from '../markdown-renderer.js';
 import { compileTemplate } from '../template-engine.js';
 import { generatePdf } from '../pdf-generator.js';
-import { mkdtemp, rm } from 'node:fs/promises';
 
 describe('pipeline', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Default mock implementations
-    vi.mocked(mkdtemp).mockResolvedValue('/tmp/pdf-reporter-abc123');
-    vi.mocked(rm).mockResolvedValue(undefined);
-    vi.mocked(renderDiagrams).mockResolvedValue({});
     vi.mocked(renderMarkdown).mockResolvedValue('<p>Rendered markdown</p>');
     vi.mocked(compileTemplate).mockResolvedValue('<html><body>Complete HTML</body></html>');
     vi.mocked(generatePdf).mockResolvedValue({
@@ -70,8 +56,6 @@ describe('pipeline', () => {
 
       // Should NOT call renderMarkdown — content is already HTML
       expect(renderMarkdown).not.toHaveBeenCalled();
-      // Should NOT call renderDiagrams — diagrams handled upstream
-      expect(renderDiagrams).not.toHaveBeenCalled();
 
       expect(compileTemplate).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -393,65 +377,6 @@ describe('pipeline', () => {
       vi.mocked(compileTemplate).mockRejectedValue(error);
 
       await expect(generatePdfPipeline(input)).rejects.toMatchObject({ code: 'TEMPLATE_NOT_FOUND' });
-    });
-  });
-
-  // ---------------------------------------------------------------------------
-  // renderDiagram
-  // ---------------------------------------------------------------------------
-
-  describe('renderDiagram', () => {
-    it('should create temp dir, render diagram, return SVG, and clean up', async () => {
-      vi.mocked(renderDiagrams).mockResolvedValue({
-        flow: { type: 'rendered-diagram', svg: '<svg>diagram</svg>' },
-      });
-
-      const result = await renderDiagram({ name: 'flow', mermaid: 'graph TD\nA-->B' });
-
-      expect(mkdtemp).toHaveBeenCalled();
-      expect(renderDiagrams).toHaveBeenCalledWith(
-        [{ name: 'flow', mermaid: 'graph TD\nA-->B' }],
-        '/tmp/pdf-reporter-abc123',
-      );
-      expect(rm).toHaveBeenCalledWith('/tmp/pdf-reporter-abc123', { recursive: true, force: true });
-      expect(result).toEqual({ name: 'flow', svg: '<svg>diagram</svg>' });
-    });
-
-    it('should use pdf-reporter- prefix for temp dir', async () => {
-      vi.mocked(renderDiagrams).mockResolvedValue({
-        flow: { type: 'rendered-diagram', svg: '<svg>diagram</svg>' },
-      });
-
-      await renderDiagram({ name: 'flow', mermaid: 'graph TD\nA-->B' });
-
-      expect(mkdtemp).toHaveBeenCalledWith(
-        expect.stringContaining('pdf-reporter-'),
-      );
-    });
-
-    it('should throw MERMAID_RENDER_FAILED if diagram not in results', async () => {
-      vi.mocked(renderDiagrams).mockResolvedValue({});
-
-      await expect(renderDiagram({ name: 'missing', mermaid: 'graph TD\nA-->B' })).rejects.toMatchObject({
-        code: 'MERMAID_RENDER_FAILED',
-      });
-    });
-
-    it('should include diagram name in MERMAID_RENDER_FAILED error message', async () => {
-      vi.mocked(renderDiagrams).mockResolvedValue({});
-
-      await expect(renderDiagram({ name: 'my-flow', mermaid: 'graph TD\nA-->B' })).rejects.toMatchObject({
-        code: 'MERMAID_RENDER_FAILED',
-        message: expect.stringContaining('my-flow'),
-      });
-    });
-
-    it('should clean up temp dir even when renderDiagrams throws', async () => {
-      vi.mocked(renderDiagrams).mockRejectedValue(new PdfReporterError('MERMAID_RENDER_FAILED', 'fail'));
-
-      await expect(renderDiagram({ name: 'flow', mermaid: 'invalid' })).rejects.toThrow();
-
-      expect(rm).toHaveBeenCalledWith('/tmp/pdf-reporter-abc123', { recursive: true, force: true });
     });
   });
 

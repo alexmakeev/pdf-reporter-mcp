@@ -12,21 +12,15 @@ import type {
   GeneratePdfOutput,
   GetTemplateSchemaOutput,
   ListTemplatesOutput,
-  RenderDiagramOutput,
 } from './types.js';
 import { PdfReporterError } from './types.js';
 
 // Import granular pipeline functions
-import { renderDiagram, renderContent, generatePdfFromHtml } from './pipeline.js';
+import { renderContent, generatePdfFromHtml } from './pipeline.js';
 
 // -----------------------------------------------------------------------------
 // Zod Schemas for MCP Tool Input Validation
 // -----------------------------------------------------------------------------
-
-const RenderDiagramInputSchema = z.object({
-  name: z.string().describe('Diagram identifier, used as {{diagram:name}} in content'),
-  mermaid: z.string().describe('Mermaid diagram source code'),
-});
 
 const RenderContentInputSchema = z.object({
   markdown: z
@@ -120,31 +114,6 @@ const server = new McpServer({
   name: 'pdf-reporter',
   version: '1.0.0',
 });
-
-// -----------------------------------------------------------------------------
-// Tool: render_diagram
-// -----------------------------------------------------------------------------
-
-server.tool(
-  'render_diagram',
-  'Render a Mermaid diagram to SVG. The document uses a pastel color theme. When composing Mermaid diagrams, use LIGHT/PASTEL background fills with BLACK text — never use dark fills with white text. The theme primary color is Royal Blue (#4169E1). Choose pastel shades of blue, green, amber, violet etc. for node fills. Example Mermaid styles: style A fill:#E0E7F5,color:#1a1a1a,stroke:#4169E1',
-  RenderDiagramInputSchema.shape,
-  async (input) => {
-    try {
-      const result: RenderDiagramOutput = await renderDiagram(input);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({ name: result.name, svg: result.svg }),
-          },
-        ],
-      };
-    } catch (error) {
-      return buildErrorResponse(error);
-    }
-  },
-);
 
 // -----------------------------------------------------------------------------
 // Tool: render_content
