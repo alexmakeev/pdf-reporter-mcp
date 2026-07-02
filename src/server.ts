@@ -111,109 +111,116 @@ function buildErrorResponse(error: unknown): {
 }
 
 // -----------------------------------------------------------------------------
-// MCP Server Setup
+// MCP Server Factory
 // -----------------------------------------------------------------------------
+// The MCP SDK allows exactly ONE connect() per McpServer instance. A module-level
+// singleton therefore crashes with "Already connected to a transport" when a
+// second SSE client connects. Every transport gets its own instance.
 
-const server = new McpServer({
-  name: 'pdf-reporter',
-  version: '1.0.0',
-});
+export function createMcpServer(): McpServer {
+  const server = new McpServer({
+    name: 'pdf-reporter',
+    version: '1.0.0',
+  });
 
-// -----------------------------------------------------------------------------
-// Tool: render_content
-// -----------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------
+  // Tool: render_content
+  // -----------------------------------------------------------------------------
 
-server.tool(
-  'render_content',
-  'Render Markdown content with callouts and diagram placeholders to HTML. Pass pre-rendered diagrams from render_diagram (which should use palette colors for visual harmony).',
-  RenderContentInputSchema.shape,
-  async (input) => {
-    try {
-      const result = await renderContent(input);
-      return {
-        content: [{ type: 'text', text: result.html }],
-      };
-    } catch (error) {
-      return buildErrorResponse(error);
-    }
-  },
-);
-
-// -----------------------------------------------------------------------------
-// Tool: generate_pdf
-// -----------------------------------------------------------------------------
-
-server.tool(
-  'generate_pdf',
-  'Generate a PDF document from pre-rendered HTML content',
-  GeneratePdfFromHtmlInputSchema.shape,
-  async (input) => {
-    try {
-      const result: GeneratePdfOutput = await generatePdfFromHtml(input);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `PDF generated: ${result.path} (${result.size})${result.pages ? `, ${result.pages} pages` : ''}`,
-          },
-        ],
-      };
-    } catch (error) {
-      return buildErrorResponse(error);
-    }
-  },
-);
-
-// -----------------------------------------------------------------------------
-// Tool: list_templates
-// -----------------------------------------------------------------------------
-
-server.tool('list_templates', 'List available PDF report templates', {}, async () => {
-  const result: ListTemplatesOutput = {
-    templates: [
-      {
-        name: 'generic',
-        description:
-          'Universal report template with cover page, optional TOC, and markdown content',
-      },
-    ],
-  };
-
-  return {
-    content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-  };
-});
-
-// -----------------------------------------------------------------------------
-// Tool: get_template_schema
-// -----------------------------------------------------------------------------
-
-server.tool(
-  'get_template_schema',
-  'Get the schema (required and optional fields) for a specific template',
-  GetTemplateSchemaInputSchema.shape,
-  async (input) => {
-    try {
-      if (input.template === 'generic') {
-        const result: GetTemplateSchemaOutput = {
-          required: ['title', 'content'],
-          optional: ['subtitle', 'logo', 'template', 'options'],
-        };
-
+  server.tool(
+    'render_content',
+    'Render Markdown content with callouts and diagram placeholders to HTML. Pass pre-rendered diagrams from render_diagram (which should use palette colors for visual harmony).',
+    RenderContentInputSchema.shape,
+    async (input) => {
+      try {
+        const result = await renderContent(input);
         return {
-          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          content: [{ type: 'text', text: result.html }],
         };
+      } catch (error) {
+        return buildErrorResponse(error);
       }
+    },
+  );
 
-      throw new PdfReporterError(
-        'TEMPLATE_NOT_FOUND',
-        `Template not found: ${input.template}`,
-      );
-    } catch (error) {
-      return buildErrorResponse(error);
-    }
-  },
-);
+  // -----------------------------------------------------------------------------
+  // Tool: generate_pdf
+  // -----------------------------------------------------------------------------
+
+  server.tool(
+    'generate_pdf',
+    'Generate a PDF document from pre-rendered HTML content',
+    GeneratePdfFromHtmlInputSchema.shape,
+    async (input) => {
+      try {
+        const result: GeneratePdfOutput = await generatePdfFromHtml(input);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `PDF generated: ${result.path} (${result.size})${result.pages ? `, ${result.pages} pages` : ''}`,
+            },
+          ],
+        };
+      } catch (error) {
+        return buildErrorResponse(error);
+      }
+    },
+  );
+
+  // -----------------------------------------------------------------------------
+  // Tool: list_templates
+  // -----------------------------------------------------------------------------
+
+  server.tool('list_templates', 'List available PDF report templates', {}, async () => {
+    const result: ListTemplatesOutput = {
+      templates: [
+        {
+          name: 'generic',
+          description:
+            'Universal report template with cover page, optional TOC, and markdown content',
+        },
+      ],
+    };
+
+    return {
+      content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+    };
+  });
+
+  // -----------------------------------------------------------------------------
+  // Tool: get_template_schema
+  // -----------------------------------------------------------------------------
+
+  server.tool(
+    'get_template_schema',
+    'Get the schema (required and optional fields) for a specific template',
+    GetTemplateSchemaInputSchema.shape,
+    async (input) => {
+      try {
+        if (input.template === 'generic') {
+          const result: GetTemplateSchemaOutput = {
+            required: ['title', 'content'],
+            optional: ['subtitle', 'logo', 'template', 'options'],
+          };
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        throw new PdfReporterError(
+          'TEMPLATE_NOT_FOUND',
+          `Template not found: ${input.template}`,
+        );
+      } catch (error) {
+        return buildErrorResponse(error);
+      }
+    },
+  );
+
+  return server;
+}
 
 // -----------------------------------------------------------------------------
 // Main Entry Point
@@ -221,7 +228,7 @@ server.tool(
 
 async function startStdio(): Promise<void> {
   const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await createMcpServer().connect(transport);
   console.error('PDF Reporter MCP server started on stdio');
 }
 
@@ -238,7 +245,8 @@ async function startSse(): Promise<void> {
       res.on('close', () => {
         transports.delete(transport.sessionId);
       });
-      await server.connect(transport);
+      // Fresh McpServer per connection — see createMcpServer() note
+      await createMcpServer().connect(transport);
       return;
     }
 

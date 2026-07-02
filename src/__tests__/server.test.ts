@@ -16,12 +16,23 @@ type ToolHandler = (input: Record<string, unknown>) => Promise<unknown>;
 const registeredTools: Record<string, ToolHandler> = {};
 
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
-  McpServer: vi.fn().mockImplementation(() => ({
-    tool: vi.fn((name: string, _description: string, _schema: unknown, handler: ToolHandler) => {
+  // Plain class (not vi.fn) so vi.restoreAllMocks() in afterEach cannot wipe it.
+  // Emulates the real SDK contract: exactly ONE connect() per McpServer
+  // instance; a second connect() throws "Already connected to a transport".
+  McpServer: class {
+    private connected = false;
+
+    tool(name: string, _description: string, _schema: unknown, handler: ToolHandler): void {
       registeredTools[name] = handler;
-    }),
-    connect: vi.fn().mockResolvedValue(undefined),
-  })),
+    }
+
+    async connect(): Promise<void> {
+      if (this.connected) {
+        throw new Error('Already connected to a transport');
+      }
+      this.connected = true;
+    }
+  },
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
@@ -33,7 +44,7 @@ import { renderContent, generatePdfFromHtml } from '../pipeline.js';
 import { PdfReporterError } from '../types.js';
 
 // Side-effect import: registers tools into registeredTools map
-await import('../server.js');
+const { createMcpServer } = await import('../server.js');
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -311,6 +322,30 @@ describe('server tools', () => {
       expect(isError(response)).toBe(true);
       expect(getTextContent(response)).toBe(
         'Error [TEMPLATE_NOT_FOUND]: Template not found: nonexistent',
+      );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Per-connection MCP server (regression: "Already connected to a transport"
+  // crash when a second SSE client connected to the module-level singleton)
+  // ---------------------------------------------------------------------------
+
+  describe('per-connection MCP server', () => {
+    it('createMcpServer returns a fresh, independently connectable instance per call', async () => {
+      const a = createMcpServer();
+      const b = createMcpServer();
+
+      expect(a).not.toBe(b);
+
+      // Each fresh instance connects fine — this is what a 2nd SSE client needs
+      await expect(a.connect({} as never)).resolves.toBeUndefined();
+      await expect(b.connect({} as never)).resolves.toBeUndefined();
+
+      // The mock enforces the real SDK contract: reusing one instance still throws,
+      // proving the passing case above is the factory, not a permissive mock
+      await expect(a.connect({} as never)).rejects.toThrow(
+        'Already connected to a transport',
       );
     });
   });
