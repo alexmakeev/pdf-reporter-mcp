@@ -1,14 +1,14 @@
 // =============================================================================
-// pdf-generator.test.ts -- Tests for PDF Generation with Puppeteer
+// pdf-generator.test.ts -- Tests for PDF Generation with Playwright (Chromium)
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { generatePdf } from '../pdf-generator.js';
 import { PdfReporterError, type PdfGeneratorOptions } from '../types.js';
 
-// Mock puppeteer
-vi.mock('puppeteer', () => ({
-  default: {
+// Mock playwright
+vi.mock('playwright', () => ({
+  chromium: {
     launch: vi.fn(),
   },
 }));
@@ -19,7 +19,7 @@ vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn(),
 }));
 
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 describe('pdf-generator', () => {
@@ -32,6 +32,7 @@ describe('pdf-generator', () => {
     // Create mock page
     mockPage = {
       setContent: vi.fn().mockResolvedValue(undefined),
+      waitForTimeout: vi.fn().mockResolvedValue(undefined),
       pdf: vi.fn().mockResolvedValue(Buffer.from('mock pdf content')),
       close: vi.fn().mockResolvedValue(undefined),
     };
@@ -42,8 +43,8 @@ describe('pdf-generator', () => {
       close: vi.fn().mockResolvedValue(undefined),
     };
 
-    // Mock puppeteer.launch
-    vi.mocked(puppeteer.launch).mockResolvedValue(mockBrowser as unknown as ReturnType<typeof puppeteer.launch>);
+    // Mock chromium.launch
+    vi.mocked(chromium.launch).mockResolvedValue(mockBrowser as unknown as Awaited<ReturnType<typeof chromium.launch>>);
 
     // Mock mkdir
     vi.mocked(mkdir).mockResolvedValue(undefined);
@@ -78,7 +79,7 @@ describe('pdf-generator', () => {
 
       const result = await generatePdf(html, options);
 
-      expect(puppeteer.launch).toHaveBeenCalledWith({
+      expect(chromium.launch).toHaveBeenCalledWith({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       });
@@ -86,7 +87,7 @@ describe('pdf-generator', () => {
       expect(mockPage.setContent).toHaveBeenCalledWith(
         '<html><body>Test</body></html>',
         {
-          waitUntil: 'networkidle0',
+          waitUntil: 'networkidle',
           timeout: 30000,
         },
       );
@@ -255,7 +256,7 @@ describe('pdf-generator', () => {
         },
       };
 
-      const error = new Error('Puppeteer failed');
+      const error = new Error('Chromium failed');
       mockPage.setContent.mockRejectedValue(error);
 
       await expect(generatePdf(html, options)).rejects.toThrow(PdfReporterError);

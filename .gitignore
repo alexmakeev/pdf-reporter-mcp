@@ -9,3 +9,4 @@ output/*.pdf
 coverage/
 .ckb/
 reports/
+.codex-sessions/

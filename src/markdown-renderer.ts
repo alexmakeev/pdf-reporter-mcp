@@ -41,46 +41,27 @@ function extractCallouts(text: string): CalloutMatch[] {
 
 /**
  * Generate HTML for a single callout block.
+ *
+ * Styling is owned by the CSS design system (`styles/report.css`): the emitted
+ * markup carries only semantic classes (`callout callout-<type>`,
+ * `callout-title`, `callout-icon`, `callout-body`) — no inline styles. This is
+ * a single source of truth for colors and lets the dark theme recolor callouts
+ * (inline styles would win by specificity and defeat theming). Unknown types
+ * keep their literal class name and fall back to the base `.callout` styling
+ * defined in CSS; the icon falls back to the info glyph.
  */
 async function renderCallout(match: CalloutMatch, marked: Marked): Promise<string> {
-  const type = match.type as CalloutType;
-  const definition = CALLOUT_TYPES[type] ?? CALLOUT_TYPES.info;
+  const known: CalloutType = match.type in CALLOUT_TYPES ? (match.type as CalloutType) : 'info';
+  const emoji = CALLOUT_TYPES[known].emoji;
 
-  const { emoji, borderColor, backgroundColor, titleColor, bodyColor } = definition;
-
-  const containerStyle = [
-    `border-left: 4px solid ${borderColor}`,
-    `background: ${backgroundColor}`,
-    'padding: 16px 20px',
-    'margin: 20px 0',
-    'border-radius: 8px',
-    'page-break-inside: avoid',
-  ].join('; ');
-
-  const titleStyle = [
-    'font-weight: 700',
-    'font-size: 15px',
-    `color: ${titleColor}`,
-    'margin-bottom: 8px',
-    'display: flex',
-    'align-items: center',
-    'gap: 8px',
-  ].join('; ');
-
-  const bodyStyle = [
-    `color: ${bodyColor}`,
-    'font-size: 14px',
-    'line-height: 1.7',
-  ].join('; ');
-
-  let html = `<div class="callout callout-${type}" style="${containerStyle}">`;
-  html += `<div class="callout-title" style="${titleStyle}">`;
+  let html = `<div class="callout callout-${match.type}">`;
+  html += '<div class="callout-title">';
   html += `<span class="callout-icon">${emoji}</span> ${match.title}`;
   html += '</div>';
 
   if (match.body) {
     const bodyHtml = await marked.parse(match.body);
-    html += `<div class="callout-body" style="${bodyStyle}">${bodyHtml}</div>`;
+    html += `<div class="callout-body">${bodyHtml}</div>`;
   }
 
   html += '</div>';

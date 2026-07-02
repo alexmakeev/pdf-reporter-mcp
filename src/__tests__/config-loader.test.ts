@@ -17,10 +17,21 @@ describe('config-loader', () => {
       const result = resolveOptions(input);
 
       expect(result.pageSize).toBe(DEFAULT_PAGE_SIZE);
+      expect(result.theme).toBe('light');
       expect(result.toc).toBe(false);
       expect(result.headerTemplate).toBe(false);
       expect(result.footerTemplate).toBe(false);
       expect(result.margins).toEqual(DEFAULT_MARGINS);
+    });
+
+    it('should default theme to light and pass through dark', () => {
+      expect(resolveOptions({ title: 'T', content: 'C' }).theme).toBe('light');
+      expect(
+        resolveOptions({ title: 'T', content: 'C', options: { theme: 'dark' } }).theme,
+      ).toBe('dark');
+      expect(
+        resolveOptions({ title: 'T', content: 'C', options: { theme: 'light' } }).theme,
+      ).toBe('light');
     });
 
     it('should use custom pageSize', () => {

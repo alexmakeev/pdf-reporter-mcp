@@ -18,40 +18,25 @@ RUN npm run build
 # --- Production stage ---
 FROM node:20-slim
 
-# Install Chrome dependencies for Puppeteer + Mermaid CLI
+# Emoji/CJK fonts so callout glyphs and non-latin text render in the PDF.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
     fonts-noto-color-emoji \
     fonts-noto-cjk \
     fonts-liberation \
-    libgbm1 \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libcairo2 \
-    libasound2 \
-    libatspi2.0-0 \
-    libxshmfence1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Tell Puppeteer to use system Chrome
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Playwright manages its own Chromium; install it into a shared, root-readable
+# path so the (non-root-agnostic) runtime finds it deterministically.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
 # Copy package files and install production deps only
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
+
+# Install the Chromium build Playwright expects, plus its OS dependencies.
+RUN npx playwright install --with-deps chromium
 
 # Copy built files
 COPY --from=builder /app/dist/ ./dist/

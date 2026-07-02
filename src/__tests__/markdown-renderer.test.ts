@@ -5,17 +5,19 @@
 import { describe, it, expect } from 'vitest';
 import { processCallouts, renderMarkdown } from '../markdown-renderer.js';
 
-// Callout type definitions mirrored from types.ts for assertion clarity
+// Callout glyphs mirrored from types.ts for assertion clarity.
+// Colors are owned by the CSS design system (styles/report.css), NOT the HTML —
+// so these assertions check semantic classes + icons, not inline styles.
 const CALLOUT_DEFS = {
-  idea:       { emoji: '💡', borderColor: '#F59E0B', backgroundColor: '#FFFBEB' },
-  automation: { emoji: '🤖', borderColor: '#14B8A6', backgroundColor: '#F0FDFA' },
-  warning:    { emoji: '⚠️', borderColor: '#F97316', backgroundColor: '#FFF7ED' },
-  success:    { emoji: '✅', borderColor: '#22C55E', backgroundColor: '#F0FDF4' },
-  info:       { emoji: 'ℹ️', borderColor: '#3B82F6', backgroundColor: '#EFF6FF' },
-  critical:   { emoji: '🔴', borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
-  business:   { emoji: '💰', borderColor: '#10B981', backgroundColor: '#ECFDF5' },
-  expert:     { emoji: '🔍', borderColor: '#8B5CF6', backgroundColor: '#F5F3FF' },
-  tip:        { emoji: '💎', borderColor: '#06B6D4', backgroundColor: '#ECFEFF' },
+  idea:       { emoji: '💡' },
+  automation: { emoji: '🤖' },
+  warning:    { emoji: '⚠️' },
+  success:    { emoji: '✅' },
+  info:       { emoji: 'ℹ️' },
+  critical:   { emoji: '🔴' },
+  business:   { emoji: '💰' },
+  expert:     { emoji: '🔍' },
+  tip:        { emoji: '💎' },
 } as const;
 
 describe('markdown-renderer', () => {
@@ -29,23 +31,20 @@ describe('markdown-renderer', () => {
         const def = CALLOUT_DEFS[type];
 
         expect(result).toContain(`class="callout callout-${type}"`);
-        expect(result).toContain(`border-left: 4px solid ${def.borderColor}`);
-        expect(result).toContain(`background: ${def.backgroundColor}`);
         expect(result).toContain(`<span class="callout-icon">${def.emoji}</span>`);
         expect(result).toContain('<div class="callout-title"');
-        expect(result).toContain('display: flex');
+        // Styling is via CSS classes only — no inline styles emitted
+        expect(result).not.toContain('style=');
         expect(result).toContain('Test Title');
         expect(result).toContain('Test content');
       }
     });
 
-    it('should render callout title in callout-title div with flex layout', async () => {
+    it('should render callout title in callout-title div', async () => {
       const markdown = ':::info My Title\nSome content\n:::';
       const result = await processCallouts(markdown);
 
-      // Title div must have display: flex
-      expect(result).toContain('display: flex');
-      // Icon and title are inside the callout-title div
+      // Icon and title are inside the callout-title div (flex layout is CSS-owned)
       expect(result).toContain('<div class="callout-title"');
       expect(result).toContain('<span class="callout-icon">ℹ️</span> My Title');
       expect(result).toContain('</div>');
@@ -65,16 +64,13 @@ describe('markdown-renderer', () => {
       const markdown = ':::unknown Test Title\nTest content\n:::';
       const result = await processCallouts(markdown);
 
-      // Class uses the actual type name
+      // Class uses the actual type name; CSS base `.callout` styles unknown types
       expect(result).toContain('class="callout callout-unknown"');
-      // But styling falls back to info definition
-      expect(result).toContain('border-left: 4px solid #3B82F6');
-      expect(result).toContain('background: #EFF6FF');
-      // Info emoji applied as fallback
+      // Info emoji applied as fallback for unknown types
       expect(result).toContain('<span class="callout-icon">ℹ️</span>');
     });
 
-    it('should handle multiple callouts with distinct border colors', async () => {
+    it('should handle multiple callouts with distinct type classes', async () => {
       const markdown = `
 :::idea First Idea
 Content 1
@@ -90,15 +86,11 @@ Content 2
 
       // Idea callout
       expect(result).toContain('callout-idea');
-      expect(result).toContain('border-left: 4px solid #F59E0B');
-      expect(result).toContain('background: #FFFBEB');
       expect(result).toContain('<span class="callout-icon">💡</span> First Idea');
       expect(result).toContain('Content 1');
 
       // Warning callout
       expect(result).toContain('callout-warning');
-      expect(result).toContain('border-left: 4px solid #F97316');
-      expect(result).toContain('background: #FFF7ED');
       expect(result).toContain('<span class="callout-icon">⚠️</span> Second Warning');
       expect(result).toContain('Content 2');
     });
@@ -226,65 +218,31 @@ This should not be rendered
       expect(result).not.toContain('<div class="callout-body"');
     });
 
-    it('should render exact container style with correct property values', async () => {
+    it('should emit semantic container classes and NO inline styles', async () => {
       const markdown = ':::info Style Check\nContent\n:::';
       const result = await processCallouts(markdown);
 
-      // Assert each individual container style property is present
-      expect(result).toContain('padding: 16px 20px');
-      expect(result).toContain('margin: 20px 0');
-      expect(result).toContain('border-radius: 8px');
-      expect(result).toContain('page-break-inside: avoid');
-      // Style properties must be joined with '; ' separator
-      expect(result).toContain('border-left: 4px solid #3B82F6; background: #EFF6FF; padding: 16px 20px; margin: 20px 0; border-radius: 8px; page-break-inside: avoid');
+      // Container carries the semantic classes; all visual styling is CSS-owned
+      expect(result).toContain('class="callout callout-info"');
+      expect(result).not.toContain('style=');
     });
 
-    it('should render exact title style with correct property values', async () => {
+    it('should emit a callout-title div without inline styles', async () => {
       const markdown = ':::info Title Style\nContent\n:::';
       const result = await processCallouts(markdown);
 
-      // Assert each individual title style property is present
-      expect(result).toContain('font-weight: 700');
-      expect(result).toContain('font-size: 15px');
-      expect(result).toContain('margin-bottom: 8px');
-      expect(result).toContain('align-items: center');
-      expect(result).toContain('gap: 8px');
-      // Title style must use '; ' as separator
-      expect(result).toContain('font-weight: 700; font-size: 15px');
+      // Title div uses only its class (flex/typography are in report.css)
+      expect(result).toContain('<div class="callout-title">');
+      expect(result).not.toContain('callout-title" style=');
     });
 
-    it('should render exact body style with correct property values', async () => {
+    it('should emit a callout-body div without inline styles', async () => {
       const markdown = ':::info Body Style\nContent\n:::';
       const result = await processCallouts(markdown);
 
-      // Each body style property must be present
-      expect(result).toContain('font-size: 14px');
-      expect(result).toContain('line-height: 1.7');
-      // Body color for info type
-      expect(result).toContain('color: #1E40AF');
-      // Body style must use '; ' as separator
-      expect(result).toContain('font-size: 14px; line-height: 1.7');
-    });
-
-    it('should render title color in title style (not empty)', async () => {
-      const markdown = ':::info Color Check\nContent\n:::';
-      const result = await processCallouts(markdown);
-
-      // titleColor for info type must appear in title style
-      // If the template literal becomes empty string, this would be missing
-      const titleDivMatch = result.match(/<div class="callout-title" style="([^"]+)"/);
-      expect(titleDivMatch).not.toBeNull();
-      expect(titleDivMatch![1]).toContain('color:');
-    });
-
-    it('should render body color in body style (not empty)', async () => {
-      const markdown = ':::info Color Body Check\nContent\n:::';
-      const result = await processCallouts(markdown);
-
-      // bodyColor must appear in body style div
-      const bodyDivMatch = result.match(/<div class="callout-body" style="([^"]+)"/);
-      expect(bodyDivMatch).not.toBeNull();
-      expect(bodyDivMatch![1]).toContain('color:');
+      // Body div uses only its class (color/size are in report.css)
+      expect(result).toContain('<div class="callout-body">');
+      expect(result).not.toContain('callout-body" style=');
     });
 
     it('should close callout-title div with </div>', async () => {
@@ -610,7 +568,6 @@ Regular paragraph here.
 
       expect(result).toContain('<h1 id="document-title">Document Title</h1>');
       expect(result).toContain('class="callout callout-info"');
-      expect(result).toContain('border-left: 4px solid #3B82F6');
       expect(result).toContain('<span class="callout-icon">ℹ️</span> Important Note');
       expect(result).toContain('<strong>important</strong>');
       expect(result).toContain('<p>Regular paragraph here.</p>');

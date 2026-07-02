@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { generatePdfPipeline, generatePdfFromHtml, renderContent } from '../pipeline.js';
+import { generatePdfPipeline, generatePdfFromHtml, renderContent, namespaceSvgIds } from '../pipeline.js';
 import { PdfReporterError, type GeneratePdfInput } from '../types.js';
 
 // Mock all downstream modules
@@ -452,6 +452,66 @@ describe('pipeline', () => {
       const result = await renderContent({ markdown: 'Content' });
 
       expect(result).toEqual({ html: '<p>Content</p>' });
+    });
+
+    it('should namespace colliding SVG ids across multiple diagrams', async () => {
+      vi.mocked(renderMarkdown).mockResolvedValue('<p>{{diagram:a}}{{diagram:b}}</p>');
+
+      const svg = '<svg id="my-svg"><defs><linearGradient id="g"/></defs><rect fill="url(#g)"/></svg>';
+      const result = await renderContent({
+        markdown: 'x',
+        diagrams: [
+          { name: 'a', svg },
+          { name: 'b', svg },
+        ],
+      });
+
+      // Each diagram gets a unique namespace — no bare `id="my-svg"` collision remains
+      expect(result.html).not.toContain('id="my-svg"');
+      expect(result.html).not.toContain('id="g"');
+      expect(result.html).toContain('id="dg0-a-my-svg"');
+      expect(result.html).toContain('id="dg1-b-my-svg"');
+      // References are rewritten to match their own namespace
+      expect(result.html).toContain('url(#dg0-a-g)');
+      expect(result.html).toContain('url(#dg1-b-g)');
+    });
+  });
+
+  describe('namespaceSvgIds', () => {
+    it('should rewrite ids and url(#..)/href references with the prefix', () => {
+      const svg = '<svg id="s"><clipPath id="c"/><rect clip-path="url(#c)"/><use href="#s"/></svg>';
+      const out = namespaceSvgIds(svg, 'ns');
+      expect(out).toContain('id="ns-s"');
+      expect(out).toContain('id="ns-c"');
+      expect(out).toContain('url(#ns-c)');
+      expect(out).toContain('href="#ns-s"');
+    });
+
+    it('should return the SVG untouched when there are no ids', () => {
+      const svg = '<svg><rect width="10" height="10"/></svg>';
+      expect(namespaceSvgIds(svg, 'ns')).toBe(svg);
+    });
+
+    it('should rewrite #id references inside an embedded <style> block (Mermaid scoping)', () => {
+      // Mermaid scopes its whole stylesheet to the root svg id; if the id is
+      // namespaced but the selector is not, all styling breaks (black nodes).
+      const svg =
+        '<svg id="root"><style>#root .node rect{fill:#E0E7F5}#root .edge{stroke:#333}</style><rect/></svg>';
+      const out = namespaceSvgIds(svg, 'ns');
+      expect(out).toContain('id="ns-root"');
+      expect(out).toContain('#ns-root .node rect{fill:#E0E7F5}');
+      expect(out).toContain('#ns-root .edge{stroke:#333}');
+      // A hex color that is not an id must be left alone
+      expect(out).toContain('fill:#E0E7F5');
+    });
+
+    it('should not partially rewrite an id that is a prefix of another id', () => {
+      const svg = '<svg id="a"><g id="ab"><rect fill="url(#ab)"/><rect fill="url(#a)"/></g></svg>';
+      const out = namespaceSvgIds(svg, 'ns');
+      expect(out).toContain('id="ns-a"');
+      expect(out).toContain('id="ns-ab"');
+      expect(out).toContain('url(#ns-ab)');
+      expect(out).toContain('url(#ns-a)');
     });
   });
 });

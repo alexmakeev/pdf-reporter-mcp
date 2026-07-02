@@ -18,11 +18,13 @@ export type CalloutType =
   | 'tip';
 
 export interface CalloutDefinition {
+  /**
+   * Leading glyph for the callout title. Colors are owned entirely by the CSS
+   * design system (`styles/report.css` `.callout-<type>`), NOT inlined here —
+   * so a single source of truth styles callouts and the dark theme can recolor
+   * them (inline styles would win by specificity and block theming).
+   */
   readonly emoji: string;
-  readonly borderColor: string;
-  readonly backgroundColor: string;
-  readonly titleColor: string;
-  readonly bodyColor: string;
 }
 
 export type CalloutRegistry = Record<CalloutType, CalloutDefinition>;
@@ -69,9 +71,13 @@ export interface RenderContentOutput {
   html: string;
 }
 
+export type ColorScheme = 'light' | 'dark';
+
 export interface PdfOptions {
   /** Page size, e.g. 'A4', 'Letter' */
   pageSize?: string;
+  /** Color scheme for the document. 'light' (default) or 'dark'. */
+  theme?: ColorScheme;
   /** Whether to generate table of contents */
   toc?: boolean;
   /** Custom header template HTML or false to disable */
@@ -150,6 +156,7 @@ export interface ReportMeta {
 
 export interface ResolvedPdfOptions {
   pageSize: string;
+  theme: ColorScheme;
   toc: boolean;
   headerTemplate: string | false;
   footerTemplate: string | false;
@@ -263,13 +270,13 @@ export const DEFAULT_MARGINS: Required<PageMargins> = {
 export const DEFAULT_PAGE_SIZE = 'A4';
 
 export const CALLOUT_TYPES: CalloutRegistry = {
-  idea:       { emoji: '💡', borderColor: '#F59E0B', backgroundColor: '#FFFBEB', titleColor: '#D97706', bodyColor: '#92400E' },
-  automation: { emoji: '🤖', borderColor: '#14B8A6', backgroundColor: '#F0FDFA', titleColor: '#0F766E', bodyColor: '#134E4A' },
-  warning:    { emoji: '⚠️', borderColor: '#F97316', backgroundColor: '#FFF7ED', titleColor: '#EA580C', bodyColor: '#9A3412' },
-  success:    { emoji: '✅', borderColor: '#22C55E', backgroundColor: '#F0FDF4', titleColor: '#16A34A', bodyColor: '#166534' },
-  info:       { emoji: 'ℹ️', borderColor: '#3B82F6', backgroundColor: '#EFF6FF', titleColor: '#2563EB', bodyColor: '#1E40AF' },
-  critical:   { emoji: '🔴', borderColor: '#EF4444', backgroundColor: '#FEF2F2', titleColor: '#DC2626', bodyColor: '#991B1B' },
-  business:   { emoji: '💰', borderColor: '#10B981', backgroundColor: '#ECFDF5', titleColor: '#059669', bodyColor: '#065F46' },
-  expert:     { emoji: '🔍', borderColor: '#8B5CF6', backgroundColor: '#F5F3FF', titleColor: '#7C3AED', bodyColor: '#5B21B6' },
-  tip:        { emoji: '💎', borderColor: '#06B6D4', backgroundColor: '#ECFEFF', titleColor: '#0891B2', bodyColor: '#155E75' },
+  idea:       { emoji: '💡' },
+  automation: { emoji: '🤖' },
+  warning:    { emoji: '⚠️' },
+  success:    { emoji: '✅' },
+  info:       { emoji: 'ℹ️' },
+  critical:   { emoji: '🔴' },
+  business:   { emoji: '💰' },
+  expert:     { emoji: '🔍' },
+  tip:        { emoji: '💎' },
 };

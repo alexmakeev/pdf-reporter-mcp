@@ -1,25 +1,83 @@
-/* === Theme Variables === */
+/* =============================================================================
+ * report.css -- PerServeX-quality report design system (light + dark)
+ *
+ * Single source of truth for report styling. All colors flow through CSS custom
+ * properties (design tokens) so the dark theme is a pure token swap via
+ * [data-theme="dark"] on <html>. Components (callouts, badges, tables, cover,
+ * code) reference tokens only — never hard-coded per-component colors — which is
+ * what makes theming work and keeps the look unified.
+ *
+ * Runtime injection (base.hbs): --theme-primary + --palette-0..7 are set from
+ * the resolved theme/palette before this stylesheet loads.
+ * ========================================================================== */
+
+/* === Design Tokens — Light (default) === */
 :root {
-  --theme-primary: #4169E1;
-  --theme-cover: #4169E1;
-  --theme-primary-dark: #2c4db3;
-  --theme-primary-pastel: #E0E7F5;
-  --theme-primary-light: #EDF1F9;
+  /* Accent (brand). --theme-primary / --theme-primary-pastel are injected at
+   * runtime by base.hbs (from THEME_PRIMARY_COLOR + generated palette) in an
+   * earlier <style> block. We must NOT redeclare them here — a later :root with
+   * equal specificity would overwrite the injected values and pin the brand to
+   * the fallback. Instead we read them via var() with a fallback baked in. */
+  --accent: var(--theme-primary, #4169E1);
+  --accent-soft: var(--theme-primary-pastel, #E0E7F5);
+  --accent-ink: #ffffff; /* text on top of --accent fills */
+
+  /* Neutrals */
+  --ink: #1c2530;        /* primary text */
+  --ink-strong: #0f1720; /* headings / bold */
+  --muted: #5b6877;      /* secondary text */
+  --faint: #8a95a1;      /* captions */
+  --line: #e3e7ec;       /* hairlines / borders */
+  --bg: #ffffff;         /* page background */
+  --soft: #f6f8fa;       /* zebra / block fills */
+  --soft-2: #eef1f5;
+
+  /* Code */
+  --code-bg: #f1f5f9;
+  --code-border: #e2e8f0;
+  --code-ink: #c7254e;
+
+  /* Semantic families (bg / border / ink) — callouts, badges */
+  --c-blue-bg: #EFF6FF;  --c-blue-bd: #3B82F6;  --c-blue-tx: #1E40AF;  --c-blue-ti: #2563EB;
+  --c-green-bg: #F0FDF4; --c-green-bd: #22C55E; --c-green-tx: #166534; --c-green-ti: #16A34A;
+  --c-amber-bg: #FFFBEB; --c-amber-bd: #F59E0B; --c-amber-tx: #92400E; --c-amber-ti: #D97706;
+  --c-orange-bg: #FFF7ED; --c-orange-bd: #F97316; --c-orange-tx: #9A3412; --c-orange-ti: #EA580C;
+  --c-red-bg: #FEF2F2;   --c-red-bd: #EF4444;   --c-red-tx: #991B1B;   --c-red-ti: #DC2626;
+  --c-teal-bg: #F0FDFA;  --c-teal-bd: #14B8A6;  --c-teal-tx: #134E4A;  --c-teal-ti: #0F766E;
+  --c-emerald-bg: #ECFDF5; --c-emerald-bd: #10B981; --c-emerald-tx: #065F46; --c-emerald-ti: #059669;
+  --c-violet-bg: #F5F3FF; --c-violet-bd: #8B5CF6; --c-violet-tx: #5B21B6; --c-violet-ti: #7C3AED;
+  --c-cyan-bg: #ECFEFF;  --c-cyan-bd: #06B6D4;  --c-cyan-tx: #155E75;  --c-cyan-ti: #0891B2;
 }
 
-/* === Palette Variables ===
- * Palette colors are injected at runtime as CSS custom properties via base.hbs.
- * Available as --palette-0 through --palette-7:
- *   --palette-0: primary color (same as --theme-primary)
- *   --palette-1: analogous +30 (warm shift)
- *   --palette-2: triadic +120
- *   --palette-3: triadic +240
- *   --palette-4: analogous +60, lighter
- *   --palette-5: complementary
- *   --palette-6: same hue, lighter (for backgrounds)
- *   --palette-7: same hue, darker (for borders/emphasis)
- * Use these in diagrams, charts, and visual elements for consistent theming.
- */
+/* === Design Tokens — Dark (theme swap) === */
+[data-theme="dark"] {
+  --accent-soft: #1b2b4d;
+  --accent-ink: #ffffff;
+
+  --ink: #e6edf3;
+  --ink-strong: #f3f7fb;
+  --muted: #9aa7b4;
+  --faint: #7d8b98;
+  --line: #2b333c;
+  --bg: #0f1419;
+  --soft: #161b22;
+  --soft-2: #1c232c;
+
+  --code-bg: #161b22;
+  --code-border: #2b333c;
+  --code-ink: #ff9db0;
+
+  /* Semantic families dimmed for dark surfaces (deep bg, bright title/body) */
+  --c-blue-bg: #12233d;  --c-blue-bd: #3B82F6;  --c-blue-tx: #bcd4f6;  --c-blue-ti: #7db1f5;
+  --c-green-bg: #12291b; --c-green-bd: #22C55E; --c-green-tx: #b6e8c6; --c-green-ti: #6fdd97;
+  --c-amber-bg: #2b220e; --c-amber-bd: #F59E0B; --c-amber-tx: #f0d59a; --c-amber-ti: #f4b955;
+  --c-orange-bg: #2c1c10; --c-orange-bd: #F97316; --c-orange-tx: #f3c39c; --c-orange-ti: #fb9a55;
+  --c-red-bg: #2c1414;   --c-red-bd: #EF4444;   --c-red-tx: #f3bcbc;   --c-red-ti: #f47171;
+  --c-teal-bg: #0e2925;  --c-teal-bd: #14B8A6;  --c-teal-tx: #a7e6dc;  --c-teal-ti: #4fd6c3;
+  --c-emerald-bg: #0e2820; --c-emerald-bd: #10B981; --c-emerald-tx: #a7e6cd; --c-emerald-ti: #4fd3a1;
+  --c-violet-bg: #1f1830; --c-violet-bd: #8B5CF6; --c-violet-tx: #d1c3f3; --c-violet-ti: #a98bf0;
+  --c-cyan-bg: #0e2630;  --c-cyan-bd: #06B6D4;  --c-cyan-tx: #a7dceb;  --c-cyan-ti: #4fc9e6;
+}
 
 /* === Base Reset & Typography === */
 * {
@@ -28,11 +86,15 @@
   box-sizing: border-box;
 }
 
+html, body {
+  background: var(--bg);
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
   font-size: 11pt;
-  line-height: 1.6;
-  color: #1a1a1a;
+  line-height: 1.62;
+  color: var(--ink);
   padding: 0 10px;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -42,47 +104,65 @@ body {
 .cover-page {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 96vh;
   padding: 60px 40px;
   page-break-after: always;
   box-sizing: border-box;
 }
 
+.cover-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+
+.cover-logo img {
+  max-height: 64px;
+  margin-bottom: 28px;
+}
+
 .cover-title-area {
-  background: var(--theme-primary-pastel, #E0E7F5);
-  border-radius: 16px;
-  padding: 48px 56px;
-  text-align: center;
-  max-width: 85%;
-  margin-bottom: 24px;
+  max-width: 100%;
 }
 
 .cover-title {
-  font-size: 34px;
+  font-size: 40px;
   font-weight: 800;
-  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  color: var(--ink-strong);
   margin: 0;
-  line-height: 1.25;
+  line-height: 1.14;
+}
+
+.cover-rule {
+  width: 96px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--accent);
+  margin: 26px 0 22px;
 }
 
 .cover-subtitle {
   font-size: 18px;
-  color: #3a3a3a;
-  margin: 16px 0 0 0;
+  color: var(--muted);
+  margin: 0;
   font-weight: 400;
+  max-width: 40em;
+  line-height: 1.5;
 }
 
 .cover-date {
-  font-size: 14px;
-  color: #6a6a6a;
+  font-size: 13px;
+  color: var(--faint);
   margin-top: 40px;
-}
-
-.cover-logo img {
-  max-height: 72px;
-  margin-bottom: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  width: 100%;
 }
 
 /* === Table of Contents === */
@@ -94,7 +174,7 @@ body {
 .toc-title {
   font-size: 20pt;
   margin-bottom: 24px;
-  color: #1e293b;
+  color: var(--ink-strong);
 }
 
 .toc-list {
@@ -103,76 +183,76 @@ body {
 
 .toc-item-h2 {
   padding: 8px 0;
-  border-bottom: 1px dotted #cbd5e1;
+  border-bottom: 1px dotted var(--line);
   font-size: 12pt;
 }
 
 .toc-item-h3 {
   padding: 6px 0 6px 20px;
   font-size: 11pt;
-  color: #475569;
+  color: var(--muted);
 }
 
 .toc-list a {
-  color: #1e293b;
+  color: var(--ink);
   text-decoration: none;
 }
 
 .toc-list a:hover {
-  color: var(--theme-primary);
+  color: var(--accent);
 }
 
 /* === Content Typography === */
 .content {
   margin: 20px 0;
+  max-width: 980px;
 }
 
 .content h1 {
-  font-size: 18pt;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 24px 0 12px;
+  font-size: 19pt;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink-strong);
+  margin: 26px 0 12px;
   page-break-after: avoid;
-  border-bottom: 2px solid var(--theme-primary);
+  border-bottom: 2px solid var(--accent);
   padding-bottom: 8px;
 }
 
 .content h2 {
-  font-size: 16pt;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 20px 0 10px;
+  font-size: 15.5pt;
+  font-weight: 700;
+  color: var(--ink-strong);
+  margin: 22px 0 10px;
   page-break-after: avoid;
 }
 
 .content h3 {
-  font-size: 14pt;
-  font-weight: 600;
-  color: #334155;
+  font-size: 13pt;
+  font-weight: 700;
+  color: var(--ink);
   margin: 16px 0 8px;
   page-break-after: avoid;
 }
 
 .content h4 {
-  font-size: 12pt;
-  font-weight: 600;
-  color: #475569;
+  font-size: 11.5pt;
+  font-weight: 700;
+  color: var(--muted);
   margin: 12px 0 6px;
 }
 
-.content h5 {
-  font-size: 11pt;
-  font-weight: 600;
-  color: #64748b;
+.content h5,
+.content h6 {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: var(--muted);
   margin: 10px 0 4px;
 }
 
-.content h6 {
-  font-size: 10pt;
-  font-weight: 600;
-  color: #64748b;
-  margin: 8px 0 4px;
-}
+/* keep heading glued to its first paragraph */
+.content h2 + p,
+.content h3 + p { page-break-before: avoid; }
 
 .content p {
   margin-bottom: 10px;
@@ -180,28 +260,25 @@ body {
   widows: 3;
 }
 
+.content a { color: var(--accent); text-decoration: none; }
+
 .content blockquote {
   margin: 16px 0;
-  padding: 12px 16px;
-  border-left: 4px solid #cbd5e1;
-  background: #f8fafc;
+  padding: 12px 18px;
+  border-left: 4px solid var(--line);
+  background: var(--soft);
   font-style: italic;
-  color: #475569;
+  color: var(--muted);
+  border-radius: 0 8px 8px 0;
 }
 
-.content strong {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.content em {
-  font-style: italic;
-}
+.content strong { font-weight: 700; color: var(--ink-strong); }
+.content em { font-style: italic; }
 
 .content hr {
-  margin: 20px 0;
+  margin: 22px 0;
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--line);
 }
 
 /* === Tree-Style Lists === */
@@ -221,33 +298,19 @@ body {
   content: '●';
   position: absolute;
   left: 0;
-  color: var(--theme-primary);
+  color: var(--accent);
   font-weight: bold;
 }
 
-/* Second level */
-.content ul ul > li::before {
-  content: '○';
-  color: #64748b;
-}
+.content ul ul > li::before { content: '○'; color: var(--muted); }
+.content ul ul ul > li::before { content: '■'; color: var(--faint); }
+.content ul ul ul ul > li::before { content: '□'; color: var(--faint); }
+.content ul ul ul ul ul > li::before { content: '▸'; color: var(--line); }
 
-/* Third level */
-.content ul ul ul > li::before {
-  content: '■';
-  color: #94a3b8;
-}
-
-/* Fourth level */
-.content ul ul ul ul > li::before {
-  content: '□';
-  color: #cbd5e1;
-}
-
-/* Fifth level */
-.content ul ul ul ul ul > li::before {
-  content: '▸';
-  color: #e2e8f0;
-}
+/* Task-list checkboxes (GFM) rendered as green ticks / empty boxes */
+.content li.task-list-item { list-style: none; }
+.content li.task-list-item::before { content: none; }
+.content input[type="checkbox"] { margin-right: 8px; accent-color: var(--c-green-ti); }
 
 .content ol {
   margin: 8px 0 12px 24px;
@@ -261,15 +324,15 @@ body {
 
 /* === Code Blocks === */
 pre {
-  background: #f1f5f9;
-  border-radius: 6px;
+  background: var(--code-bg);
+  border-radius: 8px;
   padding: 16px;
   overflow-x: auto;
   font-size: 9pt;
   line-height: 1.5;
   margin: 12px 0;
   page-break-inside: avoid;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--code-border);
 }
 
 code {
@@ -277,27 +340,35 @@ code {
   font-size: 9pt;
 }
 
+pre code { color: var(--ink); }
+
 p code, li code, td code {
-  background: #f1f5f9;
+  background: var(--code-bg);
   padding: 2px 6px;
-  border-radius: 3px;
-  color: #c7254e;
+  border-radius: 4px;
+  color: var(--code-ink);
   font-size: 9pt;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--code-border);
 }
 
-/* highlight.js compatibility */
+/* highlight.js — light */
 .hljs-keyword { color: #d73a49; }
 .hljs-string { color: #032f62; }
 .hljs-number { color: #005cc5; }
 .hljs-comment { color: #6a737d; font-style: italic; }
-.hljs-function { color: #6f42c1; }
-.hljs-title { color: #6f42c1; }
-.hljs-built_in { color: #e36209; }
-.hljs-attr { color: #005cc5; }
-.hljs-params { color: #24292e; }
-.hljs-literal { color: #005cc5; }
-.hljs-type { color: #e36209; }
+.hljs-function, .hljs-title { color: #6f42c1; }
+.hljs-built_in, .hljs-type { color: #e36209; }
+.hljs-attr, .hljs-literal { color: #005cc5; }
+.hljs-params { color: var(--ink); }
+
+/* highlight.js — dark overrides */
+[data-theme="dark"] .hljs-keyword { color: #ff7b72; }
+[data-theme="dark"] .hljs-string { color: #a5d6ff; }
+[data-theme="dark"] .hljs-number { color: #79c0ff; }
+[data-theme="dark"] .hljs-comment { color: #8b949e; }
+[data-theme="dark"] .hljs-function, [data-theme="dark"] .hljs-title { color: #d2a8ff; }
+[data-theme="dark"] .hljs-built_in, [data-theme="dark"] .hljs-type { color: #ffa657; }
+[data-theme="dark"] .hljs-attr, [data-theme="dark"] .hljs-literal { color: #79c0ff; }
 
 /* === Tables === */
 table {
@@ -305,39 +376,54 @@ table {
   border-collapse: collapse;
   font-size: 10pt;
   margin: 16px 0;
-  page-break-inside: avoid;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  break-inside: auto;
 }
 
-th {
-  background: var(--theme-primary-pastel, #E0E7F5);
-  color: #1a1a1a;
-  font-weight: 600;
+thead th {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 2px solid var(--theme-primary-dark);
 }
 
 td {
   padding: 8px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
 }
 
-tr:nth-child(even) td {
-  background: #f8fafc;
-}
+tbody tr:nth-child(even) td { background: var(--soft); }
+tr { break-inside: avoid; }
 
-tr:hover td {
-  background: #f1f5f9;
+/* === Badges === */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 9pt;
+  font-weight: 700;
+  line-height: 1.5;
+  border: 1px solid transparent;
 }
+.badge.blue   { background: var(--c-blue-bg);   color: var(--c-blue-ti);   border-color: var(--c-blue-bd); }
+.badge.green  { background: var(--c-green-bg);  color: var(--c-green-ti);  border-color: var(--c-green-bd); }
+.badge.amber  { background: var(--c-amber-bg);  color: var(--c-amber-ti);  border-color: var(--c-amber-bd); }
+.badge.orange { background: var(--c-orange-bg); color: var(--c-orange-ti); border-color: var(--c-orange-bd); }
+.badge.red    { background: var(--c-red-bg);    color: var(--c-red-ti);    border-color: var(--c-red-bd); }
+.badge.violet { background: var(--c-violet-bg); color: var(--c-violet-ti); border-color: var(--c-violet-bd); }
 
 /* === Callout Blocks === */
 .callout {
   padding: 16px 20px;
   margin: 20px 0;
-  border-radius: 8px;
+  border-radius: 10px;
   page-break-inside: avoid;
-  border-left: 4px solid;
+  border-left: 4px solid var(--c-blue-bd);
+  background: var(--c-blue-bg);
 }
 
 .callout-title {
@@ -347,94 +433,71 @@ tr:hover td {
   font-weight: 700;
   font-size: 11pt;
   margin-bottom: 8px;
+  color: var(--c-blue-ti);
 }
 
 .callout-icon {
   flex-shrink: 0;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
 .callout-body {
   font-size: 10pt;
   line-height: 1.7;
+  color: var(--c-blue-tx);
 }
+.callout-body p { margin-bottom: 6px; }
+.callout-body > *:last-child { margin-bottom: 0; }
 
-/* Callout types (9 total) */
-.callout-idea {
-  background: #FFFBEB;
-  border-left-color: #F59E0B;
-}
-.callout-idea .callout-title { color: #D97706; }
-.callout-idea .callout-body { color: #92400E; }
+/* Per-type token mapping (bg / border / title / body) */
+.callout-idea       { background: var(--c-amber-bg);   border-left-color: var(--c-amber-bd); }
+.callout-idea .callout-title { color: var(--c-amber-ti); }
+.callout-idea .callout-body  { color: var(--c-amber-tx); }
 
-.callout-automation {
-  background: #F0FDFA;
-  border-left-color: #14B8A6;
-}
-.callout-automation .callout-title { color: #0F766E; }
-.callout-automation .callout-body { color: #134E4A; }
+.callout-automation { background: var(--c-teal-bg);    border-left-color: var(--c-teal-bd); }
+.callout-automation .callout-title { color: var(--c-teal-ti); }
+.callout-automation .callout-body  { color: var(--c-teal-tx); }
 
-.callout-warning {
-  background: #FFF7ED;
-  border-left-color: #F97316;
-}
-.callout-warning .callout-title { color: #EA580C; }
-.callout-warning .callout-body { color: #9A3412; }
+.callout-warning    { background: var(--c-orange-bg);  border-left-color: var(--c-orange-bd); }
+.callout-warning .callout-title { color: var(--c-orange-ti); }
+.callout-warning .callout-body  { color: var(--c-orange-tx); }
 
-.callout-success {
-  background: #F0FDF4;
-  border-left-color: #22C55E;
-}
-.callout-success .callout-title { color: #16A34A; }
-.callout-success .callout-body { color: #166534; }
+.callout-success    { background: var(--c-green-bg);   border-left-color: var(--c-green-bd); }
+.callout-success .callout-title { color: var(--c-green-ti); }
+.callout-success .callout-body  { color: var(--c-green-tx); }
 
-.callout-info {
-  background: #EFF6FF;
-  border-left-color: #3B82F6;
-}
-.callout-info .callout-title { color: #2563EB; }
-.callout-info .callout-body { color: #1E40AF; }
+.callout-info       { background: var(--c-blue-bg);    border-left-color: var(--c-blue-bd); }
+.callout-info .callout-title { color: var(--c-blue-ti); }
+.callout-info .callout-body  { color: var(--c-blue-tx); }
 
-.callout-critical {
-  background: #FEF2F2;
-  border-left-color: #EF4444;
-}
-.callout-critical .callout-title { color: #DC2626; }
-.callout-critical .callout-body { color: #991B1B; }
+.callout-critical   { background: var(--c-red-bg);     border-left-color: var(--c-red-bd); }
+.callout-critical .callout-title { color: var(--c-red-ti); }
+.callout-critical .callout-body  { color: var(--c-red-tx); }
 
-.callout-business {
-  background: #ECFDF5;
-  border-left-color: #10B981;
-}
-.callout-business .callout-title { color: #059669; }
-.callout-business .callout-body { color: #065F46; }
+.callout-business   { background: var(--c-emerald-bg); border-left-color: var(--c-emerald-bd); }
+.callout-business .callout-title { color: var(--c-emerald-ti); }
+.callout-business .callout-body  { color: var(--c-emerald-tx); }
 
-.callout-expert {
-  background: #F5F3FF;
-  border-left-color: #8B5CF6;
-}
-.callout-expert .callout-title { color: #7C3AED; }
-.callout-expert .callout-body { color: #5B21B6; }
+.callout-expert     { background: var(--c-violet-bg);  border-left-color: var(--c-violet-bd); }
+.callout-expert .callout-title { color: var(--c-violet-ti); }
+.callout-expert .callout-body  { color: var(--c-violet-tx); }
 
-.callout-tip {
-  background: #ECFEFF;
-  border-left-color: #06B6D4;
-}
-.callout-tip .callout-title { color: #0891B2; }
-.callout-tip .callout-body { color: #155E75; }
+.callout-tip        { background: var(--c-cyan-bg);    border-left-color: var(--c-cyan-bd); }
+.callout-tip .callout-title { color: var(--c-cyan-ti); }
+.callout-tip .callout-body  { color: var(--c-cyan-tx); }
 
 /* === Diagrams === */
 .diagram-container {
-  margin: 20px 0;
+  margin: 22px 0;
   text-align: center;
   page-break-inside: avoid;
 }
 
 .diagram-title {
   font-size: 10pt;
-  font-weight: 600;
-  color: #475569;
+  font-weight: 700;
+  color: var(--muted);
   margin-bottom: 12px;
 }
 
@@ -451,38 +514,23 @@ tr:hover td {
 
 /* === Print Rules === */
 @media print {
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  .cover-page {
-    page-break-after: always;
-  }
+  .cover-page,
+  .toc-page { page-break-after: always; }
 
-  .toc-page {
-    page-break-after: always;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    page-break-after: avoid;
-  }
-
-  p, li {
-    orphans: 3;
-    widows: 3;
-  }
+  h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
 
   .callout,
   .diagram-container,
-  table,
   pre,
-  blockquote {
-    page-break-inside: avoid;
-  }
+  blockquote,
+  tr { page-break-inside: avoid; }
+  table { break-inside: auto; }
 
-  a {
-    text-decoration: none;
-    color: inherit;
-  }
+  a { text-decoration: none; color: inherit; }
 }

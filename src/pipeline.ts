@@ -39,6 +39,46 @@ function getThemeConfig(): ThemeConfig {
 // -----------------------------------------------------------------------------
 
 /**
+ * Namespace every `id` inside a single SVG string (and every internal `#id`
+ * reference — `url(#id)`, `href="#id"`, `xlink:href="#id"`) with a unique
+ * prefix. Renderers (e.g. Mermaid) hard-code ids like `id="my-svg"`; embedding
+ * several such SVGs in one HTML document collides those ids and their gradient/
+ * marker/clip references, corrupting later diagrams. Prefixing per diagram keeps
+ * each SVG internally consistent while globally unique.
+ */
+export function namespaceSvgIds(svg: string, prefix: string): string {
+  const ids = new Set<string>();
+  const idAttr = /\bid="([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = idAttr.exec(svg)) !== null) {
+    ids.add(m[1]);
+  }
+  if (ids.size === 0) return svg;
+
+  // Longer ids first so an id that is a prefix of another (e.g. "a" vs "ab")
+  // never partially rewrites the longer one.
+  const ordered = [...ids].sort((a, b) => b.length - a.length);
+
+  let out = svg;
+  for (const id of ordered) {
+    const e = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // 1) the declaring attribute
+    out = out.replace(new RegExp(`\\bid="${e}"`, 'g'), `id="${prefix}-${id}"`);
+    // 2) every internal reference to that id — url(#id), href="#id" and, crucially,
+    //    id selectors inside the embedded <style> (e.g. Mermaid's `#root .node`).
+    //    Bounded by a non-(word|dash) lookahead so hex colors / longer ids are safe.
+    out = out.replace(new RegExp(`#${e}(?![\\w-])`, 'g'), `#${prefix}-${id}`);
+  }
+  return out;
+}
+
+/** Turn a diagram name into a safe id-namespace fragment. */
+function svgPrefix(name: string, index: number): string {
+  const safe = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `dg${index}-${safe || 'diagram'}`;
+}
+
+/**
  * Render markdown content to HTML.
  * Processes callout blocks, replaces {{diagram:name}} placeholders with SVG, renders markdown.
  */
@@ -46,13 +86,14 @@ export async function renderContent(input: RenderContentInput): Promise<RenderCo
   let html = await renderMarkdown(input.markdown);
 
   if (input.diagrams) {
-    for (const diagram of input.diagrams) {
+    input.diagrams.forEach((diagram, index) => {
       const placeholder = `{{diagram:${diagram.name}}}`;
+      const safeSvg = namespaceSvgIds(diagram.svg, svgPrefix(diagram.name, index));
       html = html.replaceAll(
         placeholder,
-        `<div class="diagram-container"><div class="diagram-svg">${diagram.svg}</div></div>`,
+        `<div class="diagram-container"><div class="diagram-svg">${safeSvg}</div></div>`,
       );
-    }
+    });
   }
 
   return { html };

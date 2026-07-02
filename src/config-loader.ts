@@ -19,6 +19,7 @@ export function resolveOptions(input: GeneratePdfInput): ResolvedPdfOptions {
 
   return {
     pageSize: userOptions.pageSize || DEFAULT_PAGE_SIZE,
+    theme: userOptions.theme === 'dark' ? 'dark' : 'light',
     toc: userOptions.toc ?? false,
     headerTemplate: userOptions.headerTemplate ?? false,
     footerTemplate: userOptions.footerTemplate ?? false,

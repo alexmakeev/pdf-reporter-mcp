@@ -1,8 +1,13 @@
 // =============================================================================
-// pdf-generator.ts -- Generate PDF from HTML using Puppeteer
+// pdf-generator.ts -- Generate PDF from HTML using Playwright (Chromium)
+//
+// Engine: Playwright -> Chromium headless `page.pdf()` (print-to-PDF).
+// This replaces the former Puppeteer path (retired): a single Chromium print
+// pipeline, no dead fork. `--no-sandbox` is required to run Chromium as root
+// inside the container (bugs 020/021).
 // =============================================================================
 
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
@@ -22,7 +27,7 @@ function formatFileSize(bytes: number): string {
 }
 
 /**
- * Generate PDF from HTML content.
+ * Generate PDF from HTML content via Chromium print-to-PDF.
  * @param html - Complete HTML document
  * @param options - PDF generation options
  * @returns Object with path, size, and page count
@@ -35,16 +40,19 @@ export async function generatePdf(
 
   let browser;
   try {
-    browser = await puppeteer.launch({
+    browser = await chromium.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
     const page = await browser.newPage();
     await page.setContent(html, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'networkidle',
       timeout: 30000,
     });
+    // Let fonts/layout settle so backgrounds and web-font metrics are stable
+    // before capture (mirrors the PerServeX generator's post-load settle).
+    await page.waitForTimeout(300);
 
     const date = new Date().toISOString().slice(0, 10);
     const outputPath = join(
@@ -54,7 +62,7 @@ export async function generatePdf(
 
     // Generate PDF into a buffer (single generation)
     const pdfBuffer = await page.pdf({
-      format: options.options.pageSize as any,
+      format: options.options.pageSize,
       margin: {
         top: options.options.margins.top,
         bottom: options.options.margins.bottom,

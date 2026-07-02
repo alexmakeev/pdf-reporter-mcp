@@ -49,6 +49,10 @@ const PageMarginsSchema = z.object({
 const PdfOptionsSchema = z
   .object({
     pageSize: z.string().default('A4'),
+    theme: z
+      .enum(['light', 'dark'])
+      .default('light')
+      .describe('Color scheme for the document: light (default) or dark'),
     toc: z.boolean().default(false),
     headerTemplate: z.union([z.string(), z.literal(false)]).optional(),
     footerTemplate: z.union([z.string(), z.literal(false)]).optional(),
